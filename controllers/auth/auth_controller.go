@@ -1,4 +1,4 @@
-package auth
+package auth_controller
 
 import (
 	"github.com/gin-gonic/gin"
@@ -9,7 +9,6 @@ import (
 )
 
 func AuthenticateUser(c *gin.Context) {
-	// todo: parse response del POST y devolver al cliente el auth token. Persistirlo en algun lado?
 	var request auth.ClientAuthRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		jsonErr := apierrors.NewBadRequestApiError("bad request body")

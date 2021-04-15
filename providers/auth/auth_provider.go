@@ -50,7 +50,7 @@ func CreateUserAccessToken(code string) (*auth.MeliAuthResponse, apierrors.ApiEr
 
 	var result auth.MeliAuthResponse
 	if err := json.Unmarshal(response.Bytes(), &result); err != nil {
-		msg := "error when trying to unmarshal user addresses response"
+		msg := "error when trying to unmarshal user auth response"
 		return nil, apierrors.NewInternalServerApiError(msg, err)
 	}
 
@@ -83,7 +83,7 @@ func RefreshAccessToken(refreshToken string) (*auth.MeliAuthResponse, apierrors.
 
 	var result auth.MeliAuthResponse
 	if err := json.Unmarshal(response.Bytes(), &result); err != nil {
-		msg := "error when trying to unmarshal user addresses response"
+		msg := "error when trying to unmarshal user refresh token response"
 		return nil, apierrors.NewInternalServerApiError(msg, err)
 	}
 
