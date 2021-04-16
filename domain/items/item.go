@@ -68,7 +68,7 @@ type ItemSearchResponse struct {
 type Paging struct {
 	Total  int64 `json:"total"`
 	Offset int64 `json:"offset"`
-	Limit  int64 `json:limit`
+	Limit  int64 `json:"limit"`
 }
 
 type Sort struct {
