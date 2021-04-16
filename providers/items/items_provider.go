@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/lmurature/golang-restclient/rest"
 	"github.com/lmurature/melist-api/domain/apierrors"
 	"github.com/lmurature/melist-api/domain/items"
 	http_utils "github.com/lmurature/melist-api/utils/http"
-	"github.com/mercadolibre/golang-restclient/rest"
 	"time"
 )
 
@@ -30,14 +30,14 @@ func SearchItemsByQuery(query string) (*items.ItemSearchResponse, apierrors.ApiE
 
 	if response == nil || response.Response == nil {
 		err := errors.New("invalid restclient response")
-		msg := "error searching items"
+		msg := "invalid restclient response searching items"
 		return nil, apierrors.NewInternalServerApiError(msg, err)
 	}
 
 	if response.StatusCode > 299 {
 		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
 		if err != nil {
-			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal items search response", err)
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal apierror items search response", err)
 		}
 		return nil, apiErr
 	}
@@ -57,14 +57,14 @@ func GetItemById(itemId string) (*items.Item, apierrors.ApiError) {
 
 	if response == nil || response.Response == nil {
 		err := errors.New("invalid restclient response")
-		msg := fmt.Sprintf("error getting item %s", itemId)
+		msg := fmt.Sprintf("invalid restclient response getting item %s", itemId)
 		return nil, apierrors.NewInternalServerApiError(msg, err)
 	}
 
 	if response.StatusCode > 299 {
 		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
 		if err != nil {
-			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal item response", err)
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal apierror item response", err)
 		}
 		return nil, apiErr
 	}

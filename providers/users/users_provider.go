@@ -7,14 +7,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/lmurature/golang-restclient/rest"
 	"github.com/lmurature/melist-api/domain/apierrors"
 	"github.com/lmurature/melist-api/domain/users"
 	http_utils "github.com/lmurature/melist-api/utils/http"
-	"github.com/mercadolibre/golang-restclient/rest"
 )
 
 const (
-	getUserUri = "/users/%d?caller.id=%d"
+	getUserUri = "/users/%d"
 	BEARER     = "Bearer %s"
 )
 
@@ -31,7 +31,7 @@ func GetUserInformation(userId int64, accessToken string) (*users.User, apierror
 	usersRestClient.Headers.Add("Authorization", fmt.Sprintf(BEARER, accessToken))
 	defer usersRestClient.Headers.Del("Authorization")
 
-	uri := fmt.Sprintf(getUserUri, userId, userId)
+	uri := fmt.Sprintf(getUserUri, userId)
 
 	response := usersRestClient.Get(uri)
 
@@ -44,7 +44,7 @@ func GetUserInformation(userId int64, accessToken string) (*users.User, apierror
 	if response.StatusCode > 299 {
 		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
 		if err != nil {
-			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal get user response", err)
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal get user response error to ApiError", err)
 		}
 		return nil, apiErr
 	}

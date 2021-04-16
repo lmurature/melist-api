@@ -3,11 +3,11 @@ package auth_provider
 import (
 	"encoding/json"
 	"errors"
+	"github.com/lmurature/golang-restclient/rest"
 	"github.com/lmurature/melist-api/config"
 	"github.com/lmurature/melist-api/domain/apierrors"
 	"github.com/lmurature/melist-api/domain/auth"
 	http_utils "github.com/lmurature/melist-api/utils/http"
-	"github.com/mercadolibre/golang-restclient/rest"
 	"time"
 )
 
