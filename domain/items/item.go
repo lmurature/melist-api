@@ -17,6 +17,7 @@ type Item struct {
 	SaleTerms         []ItemAttribute   `json:"sale_terms,omitempty"`
 	Variations        []ItemVariation   `json:"variations,omitempty"`
 	SubStatus         []string          `json:"sub_status"`
+	Permalink         string            `json:"permalink,omitempty"`
 }
 
 type ItemDescription struct {

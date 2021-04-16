@@ -26,3 +26,20 @@ func SearchItems(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+func GetItem(c *gin.Context) {
+	itemId := c.Param("item_id")
+	if itemId == "" {
+		err := apierrors.NewBadRequestApiError("'item_id' can't be empty")
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	item, err := items_service.ItemsService.GetItem(itemId)
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}
