@@ -3,8 +3,8 @@ package app
 import (
 	auth_controller "github.com/lmurature/melist-api/controllers/auth"
 	items_controller "github.com/lmurature/melist-api/controllers/items"
-	users_controller "github.com/lmurature/melist-api/controllers/users"
 	"github.com/lmurature/melist-api/controllers/ping"
+	users_controller "github.com/lmurature/melist-api/controllers/users"
 )
 
 

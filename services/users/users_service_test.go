@@ -9,10 +9,10 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	rest.FlushMockups()
+	rest.StartMockupServer()
 }
 
-func GetUserError(t *testing.T) {
+func TestGetUserError(t *testing.T) {
 	rest.FlushMockups()
 	headers := make(http.Header)
 	headers.Add("Authorization", "Bearer a1b2c3d4e5")
@@ -34,7 +34,7 @@ func GetUserError(t *testing.T) {
 	assert.EqualValues(t, 403, err.Status())
 }
 
-func GetUserNoError(t *testing.T) {
+func TestGetUserNoError(t *testing.T) {
 	rest.FlushMockups()
 	headers := make(http.Header)
 	headers.Add("Authorization", "Bearer a1b2c3d4e5")

@@ -58,7 +58,7 @@ type ValueStruct struct {
 
 type ItemSearchResponse struct {
 	SiteId         string `json:"site_id"`
-	Query          string `json:"querItemSearchResponsey"`
+	Query          string `json:"query"`
 	Paging         Paging `json:"paging"`
 	Result         []Item `json:"results"`
 	Sort           Sort   `json:"sort"`
