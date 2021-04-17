@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/lmurature/golang-restclient/rest"
-	"github.com/lmurature/melist-api/config"
-	"github.com/lmurature/melist-api/domain/apierrors"
-	"github.com/lmurature/melist-api/domain/auth"
-	http_utils "github.com/lmurature/melist-api/utils/http"
+	"github.com/lmurature/melist-api/src/api/config"
+	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/auth"
+	http_utils "github.com/lmurature/melist-api/src/api/utils/http"
 	"time"
 )
 

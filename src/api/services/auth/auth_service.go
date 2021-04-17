@@ -2,9 +2,9 @@ package auth_service
 
 import (
 	"fmt"
-	"github.com/lmurature/melist-api/domain/apierrors"
-	"github.com/lmurature/melist-api/domain/auth"
-	auth_provider "github.com/lmurature/melist-api/providers/auth"
+	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/auth"
+	auth_provider "github.com/lmurature/melist-api/src/api/providers/auth"
 	"github.com/sirupsen/logrus"
 )
 

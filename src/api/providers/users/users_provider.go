@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/lmurature/golang-restclient/rest"
-	"github.com/lmurature/melist-api/domain/apierrors"
-	"github.com/lmurature/melist-api/domain/users"
-	http_utils "github.com/lmurature/melist-api/utils/http"
+	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/users"
+	http_utils "github.com/lmurature/melist-api/src/api/utils/http"
 )
 
 const (

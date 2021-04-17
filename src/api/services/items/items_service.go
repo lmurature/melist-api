@@ -1,9 +1,9 @@
 package items_service
 
 import (
-	"github.com/lmurature/melist-api/domain/apierrors"
-	"github.com/lmurature/melist-api/domain/items"
-	items_provider "github.com/lmurature/melist-api/providers/items"
+	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/items"
+	items_provider "github.com/lmurature/melist-api/src/api/providers/items"
 )
 
 type itemsService struct{}

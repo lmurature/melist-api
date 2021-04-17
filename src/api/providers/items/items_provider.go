@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lmurature/golang-restclient/rest"
-	"github.com/lmurature/melist-api/domain/apierrors"
-	"github.com/lmurature/melist-api/domain/items"
-	http_utils "github.com/lmurature/melist-api/utils/http"
+	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/items"
+	http_utils "github.com/lmurature/melist-api/src/api/utils/http"
 	"time"
 )
 
