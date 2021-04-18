@@ -42,7 +42,7 @@ func (u *UserDto) Save() apierrors.ApiError {
 
 	_, saveErr := stmt.Exec(u.Id, u.FirstName, u.LastName, u.Email, u.Nickname, u.DateCreated, u.AccessToken, u.RefreshToken)
 	if saveErr != nil {
-		logrus.Error("error when trying to save user", err)
+		logrus.Error("error when trying to save user", saveErr)
 		return apierrors.NewInternalServerApiError("error when trying to save user", errors.New("database error"))
 	}
 

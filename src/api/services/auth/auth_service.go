@@ -43,6 +43,7 @@ func (s *authService) AuthenticateUser(code string) (*auth.MeliAuthResponse, api
 
 	if err := users_service.UsersService.SaveUserToDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
 		logrus.Error("error while trying to save user information into database upon login")
+		// TODO: save user gives error 'cause it already exist. Should update old user with tokens.
 		return nil, err
 	}
 
