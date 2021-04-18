@@ -10,7 +10,7 @@ type MeliAuthResponse struct {
 	TokenType    string `json:"token_type"`
 	ExpiresIn    int64  `json:"expires_in"`
 	Scope        string `json:"scope"`
-	UserId       int64 `json:"user_id"`
+	UserId       int64  `json:"user_id"`
 	RefreshToken string `json:"refresh_token"`
 }
 
@@ -25,6 +25,5 @@ type MeliAuthRequest struct {
 
 type ClientAuthRequest struct {
 	AuthorizationCode string `json:"authorization_code,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
+	RefreshToken      string `json:"refresh_token,omitempty"`
 }
-

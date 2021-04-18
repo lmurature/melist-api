@@ -5,6 +5,8 @@ import (
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/lmurature/melist-api/src/api/domain/auth"
 	auth_provider "github.com/lmurature/melist-api/src/api/providers/auth"
+	users_provider "github.com/lmurature/melist-api/src/api/providers/users"
+	users_service "github.com/lmurature/melist-api/src/api/services/users"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,8 +33,18 @@ func (s *authService) AuthenticateUser(code string) (*auth.MeliAuthResponse, api
 	}
 
 	logrus.Info(fmt.Sprintf("successfully authenticated user %d", result.UserId))
-	// TODO: Analyze if persisting this data would be useful.
-	// TODO: Register user into database
+
+	authenticatedUser, err := users_service.UsersService.GetMyUser(result.AccessToken)
+	if err != nil {
+		logrus.Error("error while retrieving user information upon login")
+		return nil, err
+	}
+
+	if err := users_service.UsersService.SaveUserToDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
+		logrus.Error("error while trying to save user information into database upon login")
+		return nil, err
+	}
+
 	return result, nil
 }
 
@@ -44,6 +56,11 @@ func (s *authService) RefreshAuthentication(refreshToken string) (*auth.MeliAuth
 	}
 	logrus.Info(fmt.Sprintf("successfully refreshed token for user %d", result.UserId))
 	return result, nil
+}
+
+func (s *authService) ValidateAccessToken(accessToken string) apierrors.ApiError {
+	_, err := users_provider.GetUserInformationMe(accessToken)
+	return err
 }
 
 

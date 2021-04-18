@@ -1,10 +1,15 @@
 CREATE DATABASE `melist`;
 
+
 CREATE TABLE `user` (
   `id` bigint unsigned NOT NULL,
   `first_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
   `nickname` varchar(100) DEFAULT NULL,
+  `refresh_token` varchar(256) DEFAULT NULL,
+  `access_token` varchar(256) DEFAULT NULL,
+  `date_created` date DEFAULT NULL,
+  `email` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -21,6 +26,7 @@ CREATE TABLE `list` (
   `title` varchar(100) DEFAULT NULL,
   `description` text,
   `privacy` varchar(64) NOT NULL,
+  `date_created` date DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `list_FK` (`owner_id`),
   CONSTRAINT `list_FK` FOREIGN KEY (`owner_id`) REFERENCES `user` (`id`)

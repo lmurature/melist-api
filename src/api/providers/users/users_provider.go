@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	getUserUri = "/users/%d"
-	BEARER     = "Bearer %s"
+	getUserUri   = "/users/%d"
+	getMyUserUri = "/users/me"
+	BEARER       = "Bearer %s"
 )
 
 var (
@@ -26,11 +27,7 @@ var (
 	}
 )
 
-func GetUserInformation(userId int64, accessToken string) (*users.User, apierrors.ApiError) {
-	usersRestClient.Headers = make(http.Header)
-	usersRestClient.Headers.Add("Authorization", fmt.Sprintf(BEARER, accessToken))
-	defer usersRestClient.Headers.Del("Authorization")
-
+func GetUserInformation(userId int64) (*users.User, apierrors.ApiError) {
 	uri := fmt.Sprintf(getUserUri, userId)
 
 	response := usersRestClient.Get(uri)
@@ -52,6 +49,38 @@ func GetUserInformation(userId int64, accessToken string) (*users.User, apierror
 	var user users.User
 	if err := json.Unmarshal(response.Bytes(), &user); err != nil {
 		msg := fmt.Sprintf("error while trying to unmarshal data from user %d", userId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	return &user, nil
+}
+
+func GetUserInformationMe(accessToken string) (*users.User, apierrors.ApiError) {
+	usersRestClient.Headers = make(http.Header)
+	usersRestClient.Headers.Add("Authorization", fmt.Sprintf(BEARER, accessToken))
+	defer usersRestClient.Headers.Del("Authorization")
+
+	uri := fmt.Sprintf(getMyUserUri)
+
+	response := usersRestClient.Get(uri)
+
+	if response == nil || response.Response == nil {
+		msg := "invalid restclient response while trying to get information for my user"
+		err := errors.New("invalid restclient response")
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	if response.StatusCode > 299 {
+		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
+		if err != nil {
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal get user response error to ApiError", err)
+		}
+		return nil, apiErr
+	}
+
+	var user users.User
+	if err := json.Unmarshal(response.Bytes(), &user); err != nil {
+		msg := "error while trying to unmarshal data from my user"
 		return nil, apierrors.NewInternalServerApiError(msg, err)
 	}
 
