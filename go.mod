@@ -1,6 +1,6 @@
 module github.com/lmurature/melist-api
 
-go 1.12
+go 1.14
 
 require (
 	github.com/gin-gonic/gin v1.7.1
