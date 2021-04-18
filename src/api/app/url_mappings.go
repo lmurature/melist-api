@@ -5,6 +5,7 @@ import (
 	itemscontroller "github.com/lmurature/melist-api/src/api/controllers/items"
 	ping2 "github.com/lmurature/melist-api/src/api/controllers/ping"
 	userscontroller "github.com/lmurature/melist-api/src/api/controllers/users"
+	"github.com/lmurature/melist-api/src/api/middlewares"
 )
 
 
@@ -14,8 +15,8 @@ func mapUrls() {
 	router.POST("/api/users/auth/generate_token", authcontroller.AuthenticateUser)
 	router.POST("/api/users/auth/refresh_token", authcontroller.RefreshAuthentication)
 
-	router.GET("/api/users/me", userscontroller.GetUserMe)
+	router.GET("/api/users/me",  middlewares.Authenticate(), userscontroller.GetUserMe)
 
-	router.GET("/api/items/search", itemscontroller.SearchItems)
-	router.GET("/api/items/:item_id", itemscontroller.GetItem)
+	router.GET("/api/items/search",  middlewares.Authenticate(), itemscontroller.SearchItems)
+	router.GET("/api/items/:item_id", middlewares.Authenticate(), itemscontroller.GetItem)
 }

@@ -15,6 +15,7 @@ type authService struct {}
 type authServiceInterface interface{
 	AuthenticateUser(code string) (*auth.MeliAuthResponse, apierrors.ApiError)
 	RefreshAuthentication(refreshToken string) (*auth.MeliAuthResponse, apierrors.ApiError)
+	ValidateAccessToken(accessToken string) apierrors.ApiError
 }
 
 var (
