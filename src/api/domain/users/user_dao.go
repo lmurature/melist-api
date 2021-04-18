@@ -12,6 +12,7 @@ const (
 	getUser     = "SELECT u.id, u.first_name, u.last_name, u.nickname, u.email, u.date_created, u.access_token, u.refresh_token FROM user u WHERE u.id=?;"
 	insertUser  = "INSERT INTO user(id, first_name, last_name, email, nickname, date_created, access_token, refresh_token) VALUES(?,?,?,?,?,?,?,?);"
 	findByEmail = "SELECT u.id, u.first_name, u.last_name, u.nickname, u.email, u.date_created FROM user u WHERE u.email=?;"
+	updateUser  = "UPDATE user SET first_name=?, last_name=?, email=?, nickname=?, access_token=?, refresh_token=? WHERE id=?"
 )
 
 func (u *UserDto) Get() apierrors.ApiError {
@@ -65,5 +66,23 @@ func (u *UserDto) FindByEmail() apierrors.ApiError {
 		return apierrors.NewNotFoundApiError("email not found in user table")
 	}
 
+	return nil
+}
+
+func (u *UserDto) Update() apierrors.ApiError {
+	stmt, err := database.DbClient.Prepare(updateUser)
+	if err != nil {
+		logrus.Error("error when trying to prepare update user statement", err)
+		return apierrors.NewInternalServerApiError("error when trying to update user", errors.New("database error"))
+	}
+	defer stmt.Close()
+
+	_, updateErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Nickname, u.AccessToken, u.RefreshToken, u.Id)
+	if updateErr != nil {
+		logrus.Error("error when trying to update user", updateErr)
+		return apierrors.NewInternalServerApiError("error when trying to update user", errors.New("database error"))
+	}
+
+	logrus.Info(fmt.Sprintf("successfully updated user %d", u.Id))
 	return nil
 }

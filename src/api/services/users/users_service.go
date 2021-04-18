@@ -19,6 +19,7 @@ type usersServiceInterface interface {
 	SaveUserToDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError
 	GetUserFromDb(userId int64) (*users.UserDto, apierrors.ApiError)
 	FindUserByEmail(email string) (*users.UserDto, apierrors.ApiError)
+	UpdateUserDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError
 }
 
 var (
@@ -75,4 +76,18 @@ func (s *usersService) FindUserByEmail(email string) (*users.UserDto, apierrors.
 		return nil, err
 	}
 	return &userDto, nil
+}
+
+func (s *usersService) UpdateUserDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError {
+	userDto := users.UserDto{
+		Id:           u.Id,
+		FirstName:    u.FirstName,
+		LastName:     u.LastName,
+		Nickname:     u.Nickname,
+		Email:        u.Email,
+		DateCreated:  time.Now().UTC().Format(config.DbDateLayout),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+	return userDto.Update()
 }
