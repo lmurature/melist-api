@@ -25,8 +25,8 @@ func (u *UserDto) Get() apierrors.ApiError {
 	result := stmt.QueryRow(u.Id)
 
 	if queryErr := result.Scan(&u.Id, &u.FirstName, u.LastName, u.Nickname, u.Email, u.DateCreated, u.AccessToken, u.RefreshToken); queryErr != nil {
-		logrus.Error("error when trying to parse results from get user", err)
-		return apierrors.NewInternalServerApiError("error when trying to get user", errors.New("database error"))
+		logrus.Error("user not found", err)
+		return apierrors.NewNotFoundApiError("user not found")
 	}
 
 	return nil
@@ -61,8 +61,8 @@ func (u *UserDto) FindByEmail() apierrors.ApiError {
 	result := stmt.QueryRow(u.Id)
 
 	if queryErr := result.Scan(&u.Id, &u.FirstName, u.LastName, u.Nickname, u.Email, u.DateCreated); queryErr != nil {
-		logrus.Error("error when trying to parse results find user by email ", err)
-		return apierrors.NewInternalServerApiError("error when trying to find user by email ", errors.New("database error"))
+		logrus.Error("email not found in user table", err)
+		return apierrors.NewNotFoundApiError("email not found in user table")
 	}
 
 	return nil
