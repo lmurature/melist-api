@@ -12,6 +12,7 @@ import (
 func mapUrls() {
 	router.GET("/ping", ping.Ping)
 
+	// TODO: https://www.npmjs.com/package/store-js para guardar
 	router.POST("/api/users/auth/generate_token", auth_controller.AuthenticateUser)
 	router.POST("/api/users/auth/refresh_token", auth_controller.RefreshAuthentication)
 
