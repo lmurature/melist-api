@@ -42,7 +42,7 @@ func (s *authService) AuthenticateUser(code string) (*auth.MeliAuthResponse, api
 	}
 
 	if err := users_service.UsersService.SaveUserToDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
-		// save user gives error 'cause it already exist.
+		// save user gives error 'cause it already exist. This should occur only if client loses refresh token.
 		if err := users_service.UsersService.UpdateUserDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
 			return nil, err
 		}
