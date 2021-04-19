@@ -26,9 +26,9 @@ func (l *ListDto) Get() apierrors.ApiError {
 
 	result := stmt.QueryRow(l.Id)
 
-	if queryErr := result.Scan(l.Id, l.OwnerId, l.Title, l.Description, l.Privacy, l.DateCreated); queryErr != nil {
+	if queryErr := result.Scan(&l.Id, &l.OwnerId, &l.Title, &l.Description, &l.Privacy, &l.DateCreated); queryErr != nil {
 		msg := fmt.Sprintf("list %d not found", l.Id)
-		logrus.Error(msg)
+		logrus.Error(msg, queryErr)
 		return apierrors.NewNotFoundApiError(msg)
 	}
 

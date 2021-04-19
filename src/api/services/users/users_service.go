@@ -2,12 +2,10 @@ package users_service
 
 import (
 	"fmt"
-	"github.com/lmurature/melist-api/src/api/config"
-	"time"
-
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/lmurature/melist-api/src/api/domain/users"
 	users_provider "github.com/lmurature/melist-api/src/api/providers/users"
+	"github.com/lmurature/melist-api/src/api/utils/date"
 	"github.com/sirupsen/logrus"
 )
 
@@ -55,7 +53,7 @@ func (s *usersService) SaveUserToDb(u users.User, accessToken string, refreshTok
 		LastName:     u.LastName,
 		Nickname:     u.Nickname,
 		Email:        u.Email,
-		DateCreated:  time.Now().UTC().Format(config.DbDateLayout),
+		DateCreated:  date_utils.GetNowDateFormatted(),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
@@ -85,7 +83,7 @@ func (s *usersService) UpdateUserDb(u users.User, accessToken string, refreshTok
 		LastName:     u.LastName,
 		Nickname:     u.Nickname,
 		Email:        u.Email,
-		DateCreated:  time.Now().UTC().Format(config.DbDateLayout),
+		DateCreated:  date_utils.GetNowDateFormatted(),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}

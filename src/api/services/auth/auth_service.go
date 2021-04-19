@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/lmurature/melist-api/src/api/domain/auth"
+	"github.com/lmurature/melist-api/src/api/domain/users"
 	auth_provider "github.com/lmurature/melist-api/src/api/providers/auth"
 	users_provider "github.com/lmurature/melist-api/src/api/providers/users"
 	users_service "github.com/lmurature/melist-api/src/api/services/users"
@@ -15,7 +16,7 @@ type authService struct{}
 type authServiceInterface interface {
 	AuthenticateUser(code string) (*auth.MeliAuthResponse, apierrors.ApiError)
 	RefreshAuthentication(refreshToken string) (*auth.MeliAuthResponse, apierrors.ApiError)
-	ValidateAccessToken(accessToken string) apierrors.ApiError
+	ValidateAccessToken(accessToken string) (*users.User, apierrors.ApiError)
 }
 
 var (
@@ -62,7 +63,6 @@ func (s *authService) RefreshAuthentication(refreshToken string) (*auth.MeliAuth
 	return result, nil
 }
 
-func (s *authService) ValidateAccessToken(accessToken string) apierrors.ApiError {
-	_, err := users_provider.GetUserInformationMe(accessToken)
-	return err
+func (s *authService) ValidateAccessToken(accessToken string) (*users.User, apierrors.ApiError) {
+	return users_provider.GetUserInformationMe(accessToken)
 }

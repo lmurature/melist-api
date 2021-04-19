@@ -35,7 +35,7 @@ func Authenticate() gin.HandlerFunc {
 
 		token := splitToken[1]
 
-		err := auth_service.AuthService.ValidateAccessToken(token)
+		user, err := auth_service.AuthService.ValidateAccessToken(token)
 
 		if err != nil {
 			apierror := apierrors.NewForbiddenApiError("access token not found")
@@ -47,6 +47,7 @@ func Authenticate() gin.HandlerFunc {
 
 		c.Set("authorized", true)
 		c.Set("token", token)
+		c.Set("user_id", user.Id)
 		c.Next()
 	}
 }
