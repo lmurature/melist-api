@@ -58,7 +58,7 @@ CREATE TABLE `list_item` (
   `list_id` bigint unsigned NOT NULL,
   `item_id` varchar(64) NOT NULL,
   `status` varchar(100) DEFAULT NULL,
-  `variation_id` bigint unsigned DEFAULT NULL, /* CAMBIAR ESTO A ALGO QUE HAGA REFERENCIA A QUE ES EXTERNO. EXTERNAL_VARIATION O MELI_VARIATION*/
+  `variation_ext_id` bigint unsigned DEFAULT NULL,
   KEY `list_item_FK` (`list_id`),
   KEY `list_item_FK_1` (`item_id`),
   CONSTRAINT `list_item_FK` FOREIGN KEY (`list_id`) REFERENCES `list` (`id`),
