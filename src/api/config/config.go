@@ -22,7 +22,7 @@ var (
 
 func init() {
 	if !isDevelopment() {
-		RedirectUri = "http://melist-app.herokuapp.com/auth/authorized"
+		RedirectUri = "https://melist-app.herokuapp.com/auth/authorized"
 		DbUser = os.Getenv("DB_USER")
 		DbPass = os.Getenv("DB_PASS")
 		DbHost = os.Getenv("DB_HOST")
