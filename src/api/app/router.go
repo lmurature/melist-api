@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/lmurature/melist-api/src/api/config"
 )
 
 var (
@@ -17,5 +18,5 @@ func init() {
 func StartApp() {
 	mapUrls()
 
-	router.Run(":8080")
+	router.Run(config.ApiPort)
 }
