@@ -15,7 +15,9 @@ var (
 
 func init() {
 	var err error
-	DbClient, err = sql.Open("mysql", fmt.Sprintf("%s:%s@%s/melist", config.DbUser, config.DbPass, config.DbHost))
+	url := fmt.Sprintf("%s:%s@tcp(%s)/%s", config.DbUser, config.DbPass, config.DbHost, config.DbName)
+	fmt.Println("about to connect to url ", url)
+	DbClient, err = sql.Open("mysql", url)
 	if err != nil {
 		panic(err)
 	}
