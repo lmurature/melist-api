@@ -25,6 +25,13 @@ func (l ListDto) Validate() apierrors.ApiError {
 	return nil
 }
 
+func (l ListDto) ValidateUpdatability(callerId int64) apierrors.ApiError {
+	if l.OwnerId != callerId {
+		return apierrors.NewForbiddenApiError("you cannot update this list")
+	}
+	return nil
+}
+
 func (l ListDto) ValidateReadability(callerId int64) apierrors.ApiError {
 	if l.Privacy == PrivacyTypePrivate {
 		if callerId != l.OwnerId {
@@ -33,3 +40,16 @@ func (l ListDto) ValidateReadability(callerId int64) apierrors.ApiError {
 	}
 	return nil
 }
+
+func (l *ListDto) UpdateFields(updatedList ListDto) {
+	if updatedList.Privacy != "" && (updatedList.Privacy == PrivacyTypePrivate || updatedList.Privacy == PrivacyTypePublic) {
+		l.Privacy = updatedList.Privacy
+	}
+	if updatedList.Title != "" {
+		l.Title = updatedList.Title
+	}
+	if updatedList.Description != "" {
+		l.Description = updatedList.Description
+	}
+}
+

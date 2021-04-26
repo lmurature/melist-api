@@ -6,7 +6,6 @@ import (
 	"github.com/lmurature/melist-api/src/api/domain/auth"
 	"github.com/lmurature/melist-api/src/api/domain/users"
 	auth_provider "github.com/lmurature/melist-api/src/api/providers/auth"
-	users_provider "github.com/lmurature/melist-api/src/api/providers/users"
 	users_service "github.com/lmurature/melist-api/src/api/services/users"
 	"github.com/sirupsen/logrus"
 )
@@ -64,5 +63,5 @@ func (s *authService) RefreshAuthentication(refreshToken string) (*auth.MeliAuth
 }
 
 func (s *authService) ValidateAccessToken(accessToken string) (*users.User, apierrors.ApiError) {
-	return users_provider.GetUserInformationMe(accessToken)
+	return users_service.UsersService.GetMyUser(accessToken)
 }

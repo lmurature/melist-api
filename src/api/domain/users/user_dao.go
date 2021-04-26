@@ -6,6 +6,7 @@ import (
 	"github.com/lmurature/melist-api/src/api/clients/database"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
@@ -43,7 +44,9 @@ func (u *UserDto) Save() apierrors.ApiError {
 
 	_, saveErr := stmt.Exec(u.Id, u.FirstName, u.LastName, u.Email, u.Nickname, u.DateCreated, u.AccessToken, u.RefreshToken)
 	if saveErr != nil {
-		logrus.Error("error when trying to save user", saveErr)
+		if !strings.Contains(saveErr.Error(), "Duplicate entry") {
+			logrus.Error("error when trying to save user", saveErr)
+		}
 		return apierrors.NewInternalServerApiError("error when trying to save user", errors.New("database error"))
 	}
 
