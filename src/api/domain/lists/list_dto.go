@@ -1,6 +1,9 @@
 package lists
 
-import "github.com/lmurature/melist-api/src/api/domain/apierrors"
+import (
+	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/share"
+)
 
 const (
 	PrivacyTypePrivate = "private"
@@ -32,13 +35,20 @@ func (l ListDto) ValidateUpdatability(callerId int64) apierrors.ApiError {
 	return nil
 }
 
-func (l ListDto) ValidateReadability(callerId int64) apierrors.ApiError {
+func (l ListDto) ValidateReadability(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
 	if l.Privacy == PrivacyTypePrivate {
-		if callerId != l.OwnerId {
-			return apierrors.NewForbiddenApiError("you have no access to this list")
+		if callerId == l.OwnerId {
+			return nil
 		}
+		for _,c := range configs {
+			if c.UserId == callerId {
+				return nil
+			}
+		}
+	} else {
+		return nil
 	}
-	return nil
+	return apierrors.NewForbiddenApiError("you have no access to this list")
 }
 
 func (l *ListDto) UpdateFields(updatedList ListDto) {

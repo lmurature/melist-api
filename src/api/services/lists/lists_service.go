@@ -5,6 +5,7 @@ import (
 	"github.com/lmurature/melist-api/src/api/domain/lists"
 	"github.com/lmurature/melist-api/src/api/domain/share"
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -67,7 +68,13 @@ func (l listsService) GetList(listId int64, callerId int64) (*lists.ListDto, api
 		return nil, err
 	}
 
-	if err := dto.ValidateReadability(callerId); err != nil {
+	listShareConfigs := share.ShareConfig{ListId: listId}
+	configs, err := listShareConfigs.GetAllSharedConfigsByList()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dto.ValidateReadability(callerId, configs); err != nil {
 		return nil, err
 	}
 
@@ -85,27 +92,61 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config []s
 	}
 
 	errorCauseList := make(apierrors.CauseList, 0)
-	for _, c := range config {
+	for i, c := range config {
 		if err := c.Validate(); err != nil {
 			errorCauseList = append(errorCauseList, err.Message())
 		}
+		config[i].ListId = listId
 	}
 
 	if len(errorCauseList) > 0 {
 		return apierrors.NewApiError("invalid request", "invalid request for sharing access to users", http.StatusBadRequest, errorCauseList)
 	}
 
+	errorSaving := make(apierrors.CauseList, 0)
+	for i := range config {
+		if err := config[i].Save(); err != nil {
+			logrus.Error("error while trying to save share config", err)
+			errorSaving = append(errorSaving, err.Message())
+		}
+	}
+
+	if len(errorSaving) > 0 {
+		return apierrors.NewApiError("error while trying to save share configs", "database error", http.StatusInternalServerError, errorSaving)
+	}
+
 	return nil
 }
 
 func (l listsService) SearchPublicLists() (lists.Lists, apierrors.ApiError) {
-	panic("implement me")
+	dto := lists.ListDto{}
+	return dto.GetAllPublicLists()
 }
 
 func (l listsService) GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError) {
-	panic("implement me")
+	dto := lists.ListDto{OwnerId: ownerId}
+	return dto.GetListsFromOwner()
 }
 
 func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError) {
-	panic("implement me")
+	dto := share.ShareConfig{UserId: userId}
+	userSharedConfigs, err := dto.GetAllShareConfigsByUser()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]lists.ListDto, 0)
+	for _, c := range userSharedConfigs {
+		listDto := lists.ListDto{Id: c.ListId}
+		if err := listDto.Get(); err != nil {
+			return nil, err
+		}
+		result = append(result, listDto)
+	}
+
+	if len(result) == 0 {
+		return nil, apierrors.NewNotFoundApiError("you have no shared lists")
+	}
+
+	return result, nil
 }

@@ -17,6 +17,8 @@ type ShareConfig struct {
 	ShareType string `json:"share_type"`
 }
 
+type ShareConfigs []ShareConfig
+
 func (s ShareConfig) Validate() apierrors.ApiError {
 	if s.ShareType == "" {
 		return apierrors.NewBadRequestApiError(fmt.Sprintf("share type cant be empty for user id %d", s.UserId))
