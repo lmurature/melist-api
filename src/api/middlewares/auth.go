@@ -45,7 +45,6 @@ func Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("authorized", true)
 		c.Set("token", token)
 		c.Set("user_id", user.Id)
 		c.Next()

@@ -28,11 +28,45 @@ func (l ListDto) Validate() apierrors.ApiError {
 	return nil
 }
 
+func (l ListDto) ValidateAddItems(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
+	if l.Privacy == PrivacyTypePrivate {
+		if callerId == l.OwnerId {
+			return nil
+		}
+		for _,c := range configs {
+			if c.UserId == callerId && c.ShareType == share.ShareTypeWrite {
+				return nil
+			}
+		}
+	} else {
+		return nil
+	}
+	return apierrors.NewForbiddenApiError("you have no access to this list")
+
+}
+
 func (l ListDto) ValidateUpdatability(callerId int64) apierrors.ApiError {
 	if l.OwnerId != callerId {
-		return apierrors.NewForbiddenApiError("you cannot update this list")
+		return apierrors.NewForbiddenApiError("you have no access to update this list")
 	}
 	return nil
+}
+
+func (l ListDto) ValidateCheckItems(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
+	if l.Privacy == PrivacyTypePrivate {
+		if callerId == l.OwnerId {
+			return nil
+		}
+		for _,c := range configs {
+			if c.UserId == callerId && c.ShareType == share.ShareTypeCheck {
+				return nil
+			}
+		}
+	} else {
+		return nil
+	}
+	return apierrors.NewForbiddenApiError("you have no access to this list")
+
 }
 
 func (l ListDto) ValidateReadability(callerId int64, configs share.ShareConfigs) apierrors.ApiError {

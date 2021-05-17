@@ -16,10 +16,12 @@ type listsServiceInterface interface {
 	CreateList(dto lists.ListDto) (*lists.ListDto, apierrors.ApiError)
 	UpdateList(dto lists.ListDto, callerId int64) (*lists.ListDto, apierrors.ApiError)
 	GetList(listId int64, callerId int64) (*lists.ListDto, apierrors.ApiError)
-	GiveAccessToUsers(listId int64, callerId int64, config []share.ShareConfig) apierrors.ApiError
+	GetListShareConfigs(listId int64, callerId int64) (share.ShareConfigs, apierrors.ApiError)
+	GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) apierrors.ApiError
 	SearchPublicLists() (lists.Lists, apierrors.ApiError)
 	GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError)
 	GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError)
+	AddItemToList(itemId string, listId int64, callerId int64) apierrors.ApiError
 }
 
 var (
@@ -84,7 +86,7 @@ func (l listsService) GetList(listId int64, callerId int64) (*lists.ListDto, api
 	return &dto, nil
 }
 
-func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config []share.ShareConfig) apierrors.ApiError {
+func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) apierrors.ApiError {
 	list := lists.ListDto{Id: listId}
 	if err := list.Get(); err != nil {
 		return err
@@ -93,7 +95,6 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config []s
 	if err := list.ValidateUpdatability(callerId); err != nil {
 		return err
 	}
-
 
 	errorCauseList := make(apierrors.CauseList, 0)
 	for i, c := range config {
@@ -170,4 +171,49 @@ func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.Api
 	}
 
 	return result, nil
+}
+
+func (l listsService) GetListShareConfigs(listId int64, callerId int64) (share.ShareConfigs, apierrors.ApiError) {
+	list := lists.ListDto{Id: listId}
+
+	if err := list.Get(); err != nil {
+		return nil, err
+	}
+
+	if list.OwnerId != callerId {
+		return nil, apierrors.NewUnauthorizedApiError("you have no access to this list's share config")
+	}
+
+	config := share.ShareConfig{ListId: listId}
+
+	configList, err := config.GetAllSharedConfigsByList()
+	if err != nil {
+		return nil, err
+	}
+
+	return configList, nil
+}
+
+func (l listsService) AddItemToList(itemId string, listId int64, callerId int64) apierrors.ApiError {
+	list := lists.ListDto{Id: listId}
+	if err := list.Get(); err != nil {
+		return err
+	}
+
+	listShareConfigs := share.ShareConfig{ListId: listId}
+	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return err
+		}
+	}
+
+	if err := list.ValidateAddItems(callerId, actualConfigs); err != nil {
+		return err
+	}
+
+	// TODO: Check if list already has the item
+	// TODO: Add item to list => Insert into item table => Insert into list_item table with status not_checked and variation if apply
+
+	return nil
 }
