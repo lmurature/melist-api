@@ -5,6 +5,7 @@ import (
 	"github.com/lmurature/melist-api/src/api/domain/lists"
 	"github.com/lmurature/melist-api/src/api/domain/share"
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
+	"github.com/lmurature/melist-api/src/api/utils/slice"
 	"github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -71,7 +72,9 @@ func (l listsService) GetList(listId int64, callerId int64) (*lists.ListDto, api
 	listShareConfigs := share.ShareConfig{ListId: listId}
 	configs, err := listShareConfigs.GetAllSharedConfigsByList()
 	if err != nil {
-		return nil, err
+		if err.Status() != http.StatusNotFound {
+			return nil, err
+		}
 	}
 
 	if err := dto.ValidateReadability(callerId, configs); err != nil {
@@ -91,6 +94,7 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config []s
 		return err
 	}
 
+
 	errorCauseList := make(apierrors.CauseList, 0)
 	for i, c := range config {
 		if err := c.Validate(); err != nil {
@@ -103,12 +107,29 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config []s
 		return apierrors.NewApiError("invalid request", "invalid request for sharing access to users", http.StatusBadRequest, errorCauseList)
 	}
 
+	listShareConfigs := share.ShareConfig{ListId: listId}
+	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return err
+		}
+	}
+
 	errorSaving := make(apierrors.CauseList, 0)
 	for i := range config {
-		if err := config[i].Save(); err != nil {
+
+		var dbErr apierrors.ApiError
+		if slice.GetShareConfigIndexByUser(actualConfigs, config[i].UserId) {
+			dbErr = config[i].Update()
+		} else {
+			dbErr = config[i].Save()
+		}
+
+		if dbErr != nil {
 			logrus.Error("error while trying to save share config", err)
 			errorSaving = append(errorSaving, err.Message())
 		}
+
 	}
 
 	if len(errorSaving) > 0 {

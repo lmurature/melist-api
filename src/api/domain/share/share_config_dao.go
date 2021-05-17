@@ -83,7 +83,7 @@ func (s *ShareConfig) GetAllSharedConfigsByList() (ShareConfigs, apierrors.ApiEr
 
 	for rows.Next() {
 		var conf ShareConfig
-		if err := rows.Scan(&conf.UserId, &conf.ListId, &conf.ListId); err != nil {
+		if err := rows.Scan(&conf.UserId, &conf.ListId, &conf.ShareType); err != nil {
 			logrus.Error("error when scan share config row into share config struct", err)
 			return nil, apierrors.NewInternalServerApiError("error when tying to get share configs from list", errors.New("database error"))
 		}

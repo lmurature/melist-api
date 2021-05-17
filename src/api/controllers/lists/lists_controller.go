@@ -116,7 +116,16 @@ func SearchPublicLists(c *gin.Context) {
 }
 
 func GetMyLists(c *gin.Context) {
-	panic("implement me")
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	userLists, err := lists_service.ListsService.GetMyLists(callerId)
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, userLists)
 }
 
 func GetMySharedLists(c *gin.Context) {

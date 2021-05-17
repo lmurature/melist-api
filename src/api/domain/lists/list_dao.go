@@ -13,7 +13,7 @@ const (
 	insertList = "INSERT INTO list(owner_id, title, description, privacy, date_created) VALUES(?,?,?,?,?);"
 	updateList = "UPDATE list SET title=?, description=?, privacy=? WHERE id=?;"
 	getAllPublicLists = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.privacy='public';"
-	getAllListsFromOwner = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.id=?;"
+	getAllListsFromOwner = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.owner_id=?;"
 )
 
 func (l *ListDto) Get() apierrors.ApiError {
