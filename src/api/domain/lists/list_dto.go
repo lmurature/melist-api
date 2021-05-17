@@ -42,7 +42,6 @@ func (l ListDto) ValidateAddItems(callerId int64, configs share.ShareConfigs) ap
 		return nil
 	}
 	return apierrors.NewForbiddenApiError("you have no access to this list")
-
 }
 
 func (l ListDto) ValidateUpdatability(callerId int64) apierrors.ApiError {
@@ -66,7 +65,6 @@ func (l ListDto) ValidateCheckItems(callerId int64, configs share.ShareConfigs) 
 		return nil
 	}
 	return apierrors.NewForbiddenApiError("you have no access to this list")
-
 }
 
 func (l ListDto) ValidateReadability(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
