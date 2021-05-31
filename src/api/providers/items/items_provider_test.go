@@ -184,8 +184,6 @@ func TestGetItemNoError(t *testing.T) {
 	assert.NotNil(t, item)
 	assert.EqualValues(t, "MLA1", item.Id)
 	assert.EqualValues(t, "Test item - DO NOT BUY", item.Title)
-	assert.EqualValues(t, 1, len(item.Descriptions))
-	assert.EqualValues(t, "this is the description", item.Descriptions[0].PlainText)
 	assert.EqualValues(t, "CBT412445", item.CategoryId)
 	assert.EqualValues(t, 460986913, item.SellerId)
 	assert.EqualValues(t, 500, item.Price)

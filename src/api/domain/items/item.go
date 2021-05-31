@@ -1,23 +1,23 @@
 package items
 
 type Item struct {
-	Id                string            `json:"id"`
-	Title             string            `json:"title"`
-	Descriptions      []ItemDescription `json:"descriptions"`
-	CategoryId        string            `json:"category_id"`
-	SellerId          int64             `json:"seller_id"`
-	Price             float32           `json:"price"`
-	Status            string            `json:"status"`
-	InitialQuantity   int               `json:"initial_quantity"`
-	AvailableQuantity int               `json:"available_quantity"`
-	Condition         string            `json:"condition"`
-	SoldQuantity      int               `json:"sold_quantity"`
-	Pictures          []ItemPicture     `json:"pictures,omitempty"`
-	Attributes        []ItemAttribute   `json:"attributes,omitempty"`
-	SaleTerms         []ItemAttribute   `json:"sale_terms,omitempty"`
-	Variations        []ItemVariation   `json:"variations,omitempty"`
-	SubStatus         []string          `json:"sub_status"`
-	Permalink         string            `json:"permalink,omitempty"`
+	Id                string          `json:"id"`
+	Title             string          `json:"title"`
+	Description       string          `json:"description"`
+	CategoryId        string          `json:"category_id"`
+	SellerId          int64           `json:"seller_id"`
+	Price             float32         `json:"price"`
+	Status            string          `json:"status"`
+	InitialQuantity   int             `json:"initial_quantity"`
+	AvailableQuantity int             `json:"available_quantity"`
+	Condition         string          `json:"condition"`
+	SoldQuantity      int             `json:"sold_quantity"`
+	Pictures          []ItemPicture   `json:"pictures,omitempty"`
+	Attributes        []ItemAttribute `json:"attributes,omitempty"`
+	SaleTerms         []ItemAttribute `json:"sale_terms,omitempty"`
+	Variations        []ItemVariation `json:"variations,omitempty"`
+	SubStatus         []string        `json:"sub_status"`
+	Permalink         string          `json:"permalink,omitempty"`
 }
 
 type ItemDescription struct {

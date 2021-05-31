@@ -1,10 +1,10 @@
 package lists
 
 import (
-	"errors"
 	"fmt"
 	"github.com/lmurature/melist-api/src/api/clients/database"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	error_utils "github.com/lmurature/melist-api/src/api/utils/error"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,7 +20,7 @@ func (l *ListDto) Get() apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(getList)
 	if err != nil {
 		logrus.Error("error when trying to prepare get list statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to get list", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to get list", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
@@ -39,14 +39,14 @@ func (l *ListDto) Save() apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(insertList)
 	if err != nil {
 		logrus.Error("error when trying to prepare insert list statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to insert list", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to insert list", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
 	execResult, execErr := stmt.Exec(l.OwnerId, l.Title, l.Description, l.Privacy, l.DateCreated)
 	if execErr != nil {
 		logrus.Error("error when trying to save list", execErr)
-		return apierrors.NewInternalServerApiError("error when trying to save list", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to save list", error_utils.GetDatabaseGenericError())
 	}
 
 	listId, _ := execResult.LastInsertId()
@@ -61,14 +61,14 @@ func (l *ListDto) Update() apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(updateList)
 	if err != nil {
 		logrus.Error("error when trying to prepare update list statement", err)
-		return apierrors.NewInternalServerApiError("error when update to insert list", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when update to insert list", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
 	_, updateErr := stmt.Exec(l.Title, l.Description, l.Privacy, l.Id)
 	if updateErr != nil {
 		logrus.Error("error when trying to update list", updateErr)
-		return apierrors.NewInternalServerApiError("error when trying to update list", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to update list", error_utils.GetDatabaseGenericError())
 	}
 
 	logrus.Info(fmt.Sprintf("successfully updated list %d", l.Id))
@@ -79,14 +79,14 @@ func (l *ListDto) GetAllPublicLists() (Lists, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(getAllPublicLists)
 	if err != nil {
 		logrus.Error("error when trying to prepare get public lists statement", err)
-		return nil, apierrors.NewInternalServerApiError("error when trying to get public lists", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error when trying to get public lists", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.Query()
 	if err != nil {
 		logrus.Error("error while getting public lists", err)
-		return nil, apierrors.NewInternalServerApiError("error getting public lists", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error getting public lists", error_utils.GetDatabaseGenericError())
 	}
 	defer rows.Close()
 
@@ -96,7 +96,7 @@ func (l *ListDto) GetAllPublicLists() (Lists, apierrors.ApiError) {
 		var list ListDto
 		if err := rows.Scan(&list.Id, &list.OwnerId, &list.Title, &list.Description, &list.Privacy, &list.DateCreated); err != nil {
 			logrus.Error("error when scan list row into list struct", err)
-			return nil, apierrors.NewInternalServerApiError("error when tying to get public lists", errors.New("database error"))
+			return nil, apierrors.NewInternalServerApiError("error when tying to get public lists", error_utils.GetDatabaseGenericError())
 		}
 		result = append(result, list)
 	}
@@ -112,14 +112,14 @@ func (l *ListDto) GetListsFromOwner() (Lists, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(getAllListsFromOwner)
 	if err != nil {
 		logrus.Error("error when trying to prepare get all owner lists statement", err)
-		return nil, apierrors.NewInternalServerApiError("error when trying to get all owner lists", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error when trying to get all owner lists", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.Query(l.OwnerId)
 	if err != nil {
 		logrus.Error("error while getting all owner lists", err)
-		return nil, apierrors.NewInternalServerApiError("error getting all owner lists", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error getting all owner lists", error_utils.GetDatabaseGenericError())
 	}
 	defer rows.Close()
 
@@ -129,7 +129,7 @@ func (l *ListDto) GetListsFromOwner() (Lists, apierrors.ApiError) {
 		var list ListDto
 		if err := rows.Scan(&list.Id, &list.OwnerId, &list.Title, &list.Description, &list.Privacy, &list.DateCreated); err != nil {
 			logrus.Error("error when scan list row into list struct", err)
-			return nil, apierrors.NewInternalServerApiError("error when tying to get all owner lists", errors.New("database error"))
+			return nil, apierrors.NewInternalServerApiError("error when tying to get all owner lists", error_utils.GetDatabaseGenericError())
 		}
 		result = append(result, list)
 	}

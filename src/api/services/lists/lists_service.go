@@ -1,7 +1,9 @@
 package lists
 
 import (
+	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/items"
 	"github.com/lmurature/melist-api/src/api/domain/lists"
 	"github.com/lmurature/melist-api/src/api/domain/share"
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
@@ -21,7 +23,10 @@ type listsServiceInterface interface {
 	SearchPublicLists() (lists.Lists, apierrors.ApiError)
 	GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError)
 	GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError)
-	AddItemToList(itemId string, listId int64, callerId int64) apierrors.ApiError
+	AddItemToList(itemId string, variationId int64, listId int64, callerId int64) apierrors.ApiError
+	GetItemsFromList(listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError)
+	DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError
+	CheckItem(itemId string, listId int64, callerId int64) apierrors.ApiError
 }
 
 var (
@@ -194,7 +199,7 @@ func (l listsService) GetListShareConfigs(listId int64, callerId int64) (share.S
 	return configList, nil
 }
 
-func (l listsService) AddItemToList(itemId string, listId int64, callerId int64) apierrors.ApiError {
+func (l listsService) AddItemToList(itemId string, variationId int64, listId int64, callerId int64) apierrors.ApiError {
 	list := lists.ListDto{Id: listId}
 	if err := list.Get(); err != nil {
 		return err
@@ -212,8 +217,105 @@ func (l listsService) AddItemToList(itemId string, listId int64, callerId int64)
 		return err
 	}
 
-	// TODO: Check if list already has the item
-	// TODO: Add item to list => Insert into item table => Insert into list_item table with status not_checked and variation if apply
+	// Check if list already has the item
+	itemListDto := items.ItemListDto{
+		ItemId:      itemId,
+		ListId:      listId,
+		Status:      "not_checked",
+		VariationId: variationId,
+	}
 
-	return nil
+	itemCollection, err := itemListDto.GetItemsFromList()
+	if err != nil {
+		return err
+	}
+
+	if itemCollection.ContainsItem(itemId) {
+		return apierrors.NewBadRequestApiError(fmt.Sprintf("item %s is already in the list", itemId))
+	}
+
+	itemDto := items.ItemDto(itemId)
+	if err := itemDto.InsertItem(); err != nil {
+		return err
+	}
+
+	return itemListDto.InsertItemToList()
+}
+
+func (l listsService) GetItemsFromList(listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError) {
+	list := lists.ListDto{Id: listId}
+	if err := list.Get(); err != nil {
+		return nil, err
+	}
+
+	listShareConfigs := share.ShareConfig{ListId: listId}
+	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return nil, err
+		}
+	}
+
+	if err := list.ValidateReadability(callerId, actualConfigs); err != nil {
+		return nil, err
+	}
+
+	itemListDto := items.ItemListDto{
+		ListId: listId,
+	}
+
+	return itemListDto.GetItemsFromList()
+}
+
+func (l listsService) DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError {
+	list := lists.ListDto{Id: listId}
+	if err := list.Get(); err != nil {
+		return err
+	}
+
+	listShareConfigs := share.ShareConfig{ListId: listId}
+	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return err
+		}
+	}
+
+	if err := list.ValidateAddItems(callerId, actualConfigs); err != nil {
+		return err
+	}
+
+	itemListDto := items.ItemListDto{
+		ItemId: itemId,
+		ListId: listId,
+	}
+
+	return itemListDto.DeleteItemFromList()
+}
+
+func (l listsService) CheckItem(itemId string, listId int64, callerId int64) apierrors.ApiError {
+	list := lists.ListDto{Id: listId}
+	if err := list.Get(); err != nil {
+		return err
+	}
+
+	listShareConfigs := share.ShareConfig{ListId: listId}
+	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return err
+		}
+	}
+
+	if err := list.ValidateCheckItems(callerId, actualConfigs); err != nil {
+		return err
+	}
+
+	itemListDto := items.ItemListDto{
+		ItemId: itemId,
+		ListId: listId,
+		Status: "checked",
+	}
+
+	return itemListDto.CheckItem()
 }

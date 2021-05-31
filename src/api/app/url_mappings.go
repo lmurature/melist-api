@@ -12,7 +12,7 @@ import (
 func mapUrls() {
 	router.GET("/ping", ping.Ping)
 
-	// TODO: https://www.npmjs.com/package/store-js para guardar access_token y refresh_token en el front
+	// Authentication management
 	router.POST("/api/users/auth/generate_token", auth_controller.AuthenticateUser)
 	router.POST("/api/users/auth/refresh_token", auth_controller.RefreshAuthentication)
 
@@ -20,7 +20,6 @@ func mapUrls() {
 
 	router.GET("/api/items/search", middlewares.Authenticate(), items_controller.SearchItems)
 	router.GET("/api/items/:item_id", middlewares.Authenticate(), items_controller.GetItem)
-
 
 	// List management
 	router.POST("/api/lists/create", middlewares.Authenticate(), lists_controller.CreateList)
@@ -33,5 +32,8 @@ func mapUrls() {
 	router.GET("/api/lists/get/all_shared", middlewares.Authenticate(), lists_controller.GetMySharedLists)
 
 	// List items management
-	router.POST("/api/lists/:list_id/add_items/:item_id", middlewares.Authenticate(), lists_controller.AddItemsToList)
+	router.POST("/api/lists/:list_id/items/:item_id", middlewares.Authenticate(), lists_controller.AddItemsToList)
+	router.GET("/api/lists/:list_id/items", middlewares.Authenticate(), lists_controller.GetItems)
+	router.DELETE("/api/lists/:list_id/items/:item_id", middlewares.Authenticate(), lists_controller.DeleteItem)
+	router.PUT("/api/lists/:list_id/check/:item_id", middlewares.Authenticate(), lists_controller.CheckItem)
 }

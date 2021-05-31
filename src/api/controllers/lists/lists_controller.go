@@ -184,14 +184,103 @@ func AddItemsToList(c *gin.Context) {
 		return
 	}
 
+	var variationId int64
+	variationIdParam := c.Param("variation_id")
+	if variationIdParam != "" {
+		var err error
+		variationId, err = strconv.ParseInt(variationIdParam, 10, 64)
+		if err != nil {
+			br := apierrors.NewBadRequestApiError("variation id must be an integer")
+			c.JSON(br.Status(), br)
+			return
+		}
+	}
+
 	userId, _ := c.Get("user_id")
 	callerId := userId.(int64)
 
-	addErr := lists_service.ListsService.AddItemToList(itemId, listId, callerId)
+	addErr := lists_service.ListsService.AddItemToList(itemId, variationId, listId, callerId)
 	if addErr != nil {
 		c.JSON(addErr.Status(), addErr)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "added"})
+}
+
+func GetItems(c *gin.Context) {
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	items, getErr := lists_service.ListsService.GetItemsFromList(listId, callerId)
+	if getErr != nil {
+		c.JSON(getErr.Status(), getErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
+func DeleteItem(c *gin.Context) {
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	itemId := c.Param("item_id")
+	if itemId == "" {
+		br := apierrors.NewBadRequestApiError("item id is mandatory")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	addErr := lists_service.ListsService.DeleteItemFromList(itemId, listId, callerId)
+	if addErr != nil {
+		c.JSON(addErr.Status(), addErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
+func CheckItem(c *gin.Context) {
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	itemId := c.Param("item_id")
+	if itemId == "" {
+		br := apierrors.NewBadRequestApiError("item id is mandatory")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	addErr := lists_service.ListsService.CheckItem(itemId, listId, callerId)
+	if addErr != nil {
+		c.JSON(addErr.Status(), addErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "checked"})
 }

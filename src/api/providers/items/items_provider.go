@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	uriSearchItems = "/sites/MLA/search?q=%s"
-	uriGetItem     = "/items/%s"
+	uriSearchItems        = "/sites/MLA/search?q=%s"
+	uriGetItem            = "/items/%s"
+	uriGetItemDescription = "/items/%s/description"
 )
 
 var (
@@ -76,4 +77,31 @@ func GetItemById(itemId string) (*items.Item, apierrors.ApiError) {
 	}
 
 	return &item, nil
+}
+
+func GetItemDescription(itemId string) (*items.ItemDescription, apierrors.ApiError) {
+	uri := fmt.Sprintf(uriGetItemDescription, itemId)
+	response := itemsRestClient.Get(uri)
+
+	if response == nil || response.Response == nil {
+		err := errors.New("invalid restclient response")
+		msg := fmt.Sprintf("invalid restclient response getting item %s description", itemId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	if response.StatusCode > 299 {
+		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
+		if err != nil {
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal apierror item description response", err)
+		}
+		return nil, apiErr
+	}
+
+	var description items.ItemDescription
+	if err := json.Unmarshal(response.Bytes(), &description); err != nil {
+		msg := fmt.Sprintf("error trying to unmarshal response into item description %s structure", itemId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	return &description, nil
 }

@@ -82,6 +82,13 @@ func TestGetItemNoError(t *testing.T) {
 		RespBody:     `{"id":"MLA1","site_id":"MLA","title":"Test item - DO NOT BUY","descriptions":[{"plain_text": "this is the description"}],"listing_type_id":"gold_pro","category_id":"CBT412445","seller_id":460986913,"price":500,"base_price":500,"initial_quantity":10,"available_quantity":9,"sold_quantity":1, "status": "active"}`,
 	})
 
+	rest.AddMockups(&rest.Mock{
+		URL:          "https://api.mercadolibre.com/items/MLA1/description",
+		HTTPMethod:   http.MethodGet,
+		RespHTTPCode: http.StatusOK,
+		RespBody:     `{"plain_text": "lalala"}`,
+	})
+
 	service := itemsService{}
 
 	item, err := service.GetItem("MLA1")
@@ -89,8 +96,6 @@ func TestGetItemNoError(t *testing.T) {
 	assert.NotNil(t, item)
 	assert.EqualValues(t, "MLA1", item.Id)
 	assert.EqualValues(t, "Test item - DO NOT BUY", item.Title)
-	assert.EqualValues(t, 1, len(item.Descriptions))
-	assert.EqualValues(t, "this is the description", item.Descriptions[0].PlainText)
 	assert.EqualValues(t, "CBT412445", item.CategoryId)
 	assert.EqualValues(t, 460986913, item.SellerId)
 	assert.EqualValues(t, 500, item.Price)
@@ -98,4 +103,5 @@ func TestGetItemNoError(t *testing.T) {
 	assert.EqualValues(t, 10, item.InitialQuantity)
 	assert.EqualValues(t, 9, item.AvailableQuantity)
 	assert.EqualValues(t, 1, item.SoldQuantity)
+	assert.EqualValues(t, "lalala", item.Description)
 }

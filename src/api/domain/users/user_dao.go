@@ -1,10 +1,10 @@
 package users
 
 import (
-	"errors"
 	"fmt"
 	"github.com/lmurature/melist-api/src/api/clients/database"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	error_utils "github.com/lmurature/melist-api/src/api/utils/error"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
@@ -20,7 +20,7 @@ func (u *UserDto) Get() apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(getUser)
 	if err != nil {
 		logrus.Error("error when trying to prepare get user statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to get user", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to get user", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
@@ -38,7 +38,7 @@ func (u *UserDto) Save() apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(insertUser)
 	if err != nil {
 		logrus.Error("error when trying to prepare insert user statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to insert user", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to insert user", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
@@ -47,7 +47,7 @@ func (u *UserDto) Save() apierrors.ApiError {
 		if !strings.Contains(saveErr.Error(), "Duplicate entry") {
 			logrus.Error("error when trying to save user", saveErr)
 		}
-		return apierrors.NewInternalServerApiError("error when trying to save user", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to save user", error_utils.GetDatabaseGenericError())
 	}
 
 	logrus.Info(fmt.Sprintf("successfully registered user %d", u.Id))
@@ -58,7 +58,7 @@ func (u *UserDto) FindByEmail() apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(findByEmail)
 	if err != nil {
 		logrus.Error("error when trying to prepare find user by email statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to find user by email", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to find user by email", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
@@ -76,14 +76,14 @@ func (u *UserDto) Update() apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(updateUser)
 	if err != nil {
 		logrus.Error("error when trying to prepare update user statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to update user", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to update user", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
 	_, updateErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Nickname, u.AccessToken, u.RefreshToken, u.Id)
 	if updateErr != nil {
 		logrus.Error("error when trying to update user", updateErr)
-		return apierrors.NewInternalServerApiError("error when trying to update user", errors.New("database error"))
+		return apierrors.NewInternalServerApiError("error when trying to update user", error_utils.GetDatabaseGenericError())
 	}
 
 	logrus.Info(fmt.Sprintf("successfully updated user %d", u.Id))

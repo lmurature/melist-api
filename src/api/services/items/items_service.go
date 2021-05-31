@@ -36,5 +36,12 @@ func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) 
 		return nil, err
 	}
 
+	description, err := items_provider.GetItemDescription(itemId)
+	if err != nil {
+		return nil, err
+	}
+
+	item.Description = description.PlainText
+
 	return item, nil
 }
