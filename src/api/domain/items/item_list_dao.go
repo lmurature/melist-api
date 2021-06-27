@@ -20,6 +20,7 @@ type ItemListDto struct {
 	ListId      int64  `json:"list_id"`
 	Status      string `json:"status"`
 	VariationId int64  `json:"variation_id,omitempty"`
+	MeliItem    *Item   `json:"item,omitempty"`
 }
 
 type ItemListCollection []ItemListDto
@@ -103,7 +104,6 @@ func (i *ItemListDto) CheckItem() apierrors.ApiError {
 		return apierrors.NewInternalServerApiError("error when trying to item from list", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
-
 
 	_, updateErr := stmt.Exec(i.Status, i.ItemId, i.ListId)
 	if updateErr != nil {

@@ -1,5 +1,7 @@
 package items
 
+import "github.com/lmurature/melist-api/src/api/domain/apierrors"
+
 type Item struct {
 	Id                string          `json:"id"`
 	Title             string          `json:"title"`
@@ -74,4 +76,16 @@ type Paging struct {
 type Sort struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type ItemConcurrent struct {
+	Item      *Item
+	Error     apierrors.ApiError
+	ListIndex int
+}
+
+type ItemDescriptionConcurrent struct {
+	Item        *Item
+	Description *ItemDescription
+	Error       apierrors.ApiError
 }

@@ -217,10 +217,18 @@ func GetItems(c *gin.Context) {
 		return
 	}
 
+
+	info, err :=	strconv.ParseBool(c.DefaultQuery("info", "false"))
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("info must be a boolean [true or false]")
+		c.JSON(br.Status(), br)
+		return
+	}
+
 	userId, _ := c.Get("user_id")
 	callerId := userId.(int64)
 
-	items, getErr := lists_service.ListsService.GetItemsFromList(listId, callerId)
+	items, getErr := lists_service.ListsService.GetItemsFromList(listId, callerId, info)
 	if getErr != nil {
 		c.JSON(getErr.Status(), getErr)
 		return

@@ -6,6 +6,7 @@ import (
 	"github.com/lmurature/melist-api/src/api/domain/items"
 	"github.com/lmurature/melist-api/src/api/domain/lists"
 	"github.com/lmurature/melist-api/src/api/domain/share"
+	items_service "github.com/lmurature/melist-api/src/api/services/items"
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
 	"github.com/lmurature/melist-api/src/api/utils/slice"
 	"github.com/sirupsen/logrus"
@@ -24,7 +25,7 @@ type listsServiceInterface interface {
 	GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError)
 	GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError)
 	AddItemToList(itemId string, variationId int64, listId int64, callerId int64) apierrors.ApiError
-	GetItemsFromList(listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError)
+	GetItemsFromList(listId int64, callerId int64, info bool) (items.ItemListCollection, apierrors.ApiError)
 	DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError
 	CheckItem(itemId string, listId int64, callerId int64) apierrors.ApiError
 }
@@ -242,7 +243,7 @@ func (l listsService) AddItemToList(itemId string, variationId int64, listId int
 	return itemListDto.InsertItemToList()
 }
 
-func (l listsService) GetItemsFromList(listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError) {
+func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) (items.ItemListCollection, apierrors.ApiError) {
 	list := lists.ListDto{Id: listId}
 	if err := list.Get(); err != nil {
 		return nil, err
@@ -264,7 +265,37 @@ func (l listsService) GetItemsFromList(listId int64, callerId int64) (items.Item
 		ListId: listId,
 	}
 
-	return itemListDto.GetItemsFromList()
+	itemListCollection, err := itemListDto.GetItemsFromList()
+	if err != nil {
+		return nil, err
+	}
+
+	if info {
+		input := make(chan items.ItemConcurrent, len(itemListCollection))
+		defer close(input)
+
+		for i := range itemListCollection {
+			go func(id string, index int, output chan items.ItemConcurrent) {
+				item, err := items_service.ItemsService.GetItem(id)
+				output <- items.ItemConcurrent{
+					Item:      item,
+					Error:     err,
+					ListIndex: index,
+				}
+			}(itemListCollection[i].ItemId, i, input)
+		}
+
+		for i := 0; i < len(itemListCollection); i++ {
+			result := <-input
+			if result.Error != nil {
+				return nil, result.Error
+			}
+
+			itemListCollection[result.ListIndex].MeliItem = result.Item
+		}
+	}
+
+	return itemListCollection, nil
 }
 
 func (l listsService) DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError {

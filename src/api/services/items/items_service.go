@@ -31,17 +31,42 @@ func (s *itemsService) SearchItems(query string) (*items.ItemSearchResponse, api
 }
 
 func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) {
-	item, err := items_provider.GetItemById(itemId)
-	if err != nil {
-		return nil, err
+	var meliItem *items.Item
+	var desc *items.ItemDescription
+	input := make(chan items.ItemDescriptionConcurrent, 2)
+	defer close(input)
+
+	go func(itemId string, output chan items.ItemDescriptionConcurrent) {
+		item, err := items_provider.GetItemById(itemId)
+		output <- items.ItemDescriptionConcurrent{
+			Item:        item,
+			Description: nil,
+			Error:       err,
+		}
+	}(itemId, input)
+
+	go func(itemId string, output chan items.ItemDescriptionConcurrent) {
+		description, err := items_provider.GetItemDescription(itemId)
+		output <- items.ItemDescriptionConcurrent{
+			Item:        nil,
+			Description: description,
+			Error:       err,
+		}
+	}(itemId, input)
+
+	for i := 0; i < 2; i++ {
+		result := <- input
+		if result.Error != nil {
+			return nil, result.Error
+		}
+
+		if result.Item != nil {
+			meliItem = result.Item
+		} else if result.Description != nil {
+			desc = result.Description
+		}
 	}
 
-	description, err := items_provider.GetItemDescription(itemId)
-	if err != nil {
-		return nil, err
-	}
-
-	item.Description = description.PlainText
-
-	return item, nil
+	meliItem.Description = desc.PlainText
+	return meliItem, nil
 }
