@@ -12,7 +12,7 @@ const (
 	getShareConfigsByUser = "SELECT s.user_id, s.list_id, s.`type` FROM share_config s WHERE s.user_id=?;"
 	getShareConfigsByList = "SELECT s.user_id, s.list_id, s.`type` FROM share_config s WHERE s.list_id=?;"
 	updateShareConfigType = "UPDATE share_config SET `type`=? WHERE (user_id=? AND list_id=?);"
-	deleteShareConfig     = "DELETE FROM share_config WHERE (s.user_id=? AND s.list_id=?);"
+	deleteShareConfig     = "DELETE FROM share_config s WHERE (s.user_id=? AND s.list_id=?);"
 )
 
 func (s *ShareConfig) Save() apierrors.ApiError {
