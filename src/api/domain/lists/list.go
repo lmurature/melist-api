@@ -33,7 +33,7 @@ func (l List) ValidateAddItems(callerId int64, configs share.ShareConfigs) apier
 		if callerId == l.OwnerId {
 			return nil
 		}
-		for _,c := range configs {
+		for _, c := range configs {
 			if c.UserId == callerId && c.ShareType == share.ShareTypeWrite {
 				return nil
 			}
@@ -56,7 +56,7 @@ func (l List) ValidateCheckItems(callerId int64, configs share.ShareConfigs) api
 		if callerId == l.OwnerId {
 			return nil
 		}
-		for _,c := range configs {
+		for _, c := range configs {
 			if c.UserId == callerId && c.ShareType == share.ShareTypeCheck {
 				return nil
 			}
@@ -72,7 +72,7 @@ func (l List) ValidateReadability(callerId int64, configs share.ShareConfigs) ap
 		if callerId == l.OwnerId {
 			return nil
 		}
-		for _,c := range configs {
+		for _, c := range configs {
 			if c.UserId == callerId {
 				return nil
 			}
@@ -94,4 +94,3 @@ func (l *List) UpdateFields(updatedList List) {
 		l.Description = updatedList.Description
 	}
 }
-
