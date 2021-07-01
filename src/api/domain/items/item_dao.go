@@ -8,13 +8,25 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const(
+const (
 	insertItem = "INSERT INTO item(item_id) VALUES(?);"
 )
 
-type ItemDto string
+var (
+	ItemDao itemDaoInterface
+)
 
-func (i *ItemDto) InsertItem() apierrors.ApiError {
+type itemDaoInterface interface {
+	InsertItem(itemId string) apierrors.ApiError
+}
+
+type itemDao struct{}
+
+func init() {
+	ItemDao = &itemDao{}
+}
+
+func (i *itemDao) InsertItem(itemId string) apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(insertItem)
 	if err != nil {
 		logrus.Error("error when trying to prepare insert item statement", err)
@@ -22,7 +34,7 @@ func (i *ItemDto) InsertItem() apierrors.ApiError {
 	}
 	defer stmt.Close()
 
-	_, saveErr := stmt.Exec(i)
+	_, saveErr := stmt.Exec(itemId)
 	if saveErr != nil {
 		return apierrors.NewInternalServerApiError("error when trying to save item to items table", error_utils.GetDatabaseGenericError())
 	}

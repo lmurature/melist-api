@@ -15,43 +15,41 @@ const (
 	checkItem          = "UPDATE list_item SET status=? WHERE item_id=? and list_id=?;"
 )
 
-type ItemListDto struct {
-	ItemId      string `json:"item_id"`
-	ListId      int64  `json:"list_id"`
-	Status      string `json:"status"`
-	VariationId int64  `json:"variation_id,omitempty"`
-	MeliItem    *Item   `json:"item,omitempty"`
+var (
+	ItemListDao itemListDaoInterface
+)
+
+type itemListDaoInterface interface {
+	InsertItemToList(itemList ItemListDto) (*ItemListDto, apierrors.ApiError)
+	DeleteItemFromList(itemId string, listId int64) apierrors.ApiError
+	GetItemsFromList(listId int64) (ItemListCollection, apierrors.ApiError)
+	UpdateItemStatus(itemId string, listId int64, status string) apierrors.ApiError
 }
 
-type ItemListCollection []ItemListDto
+type itemListDao struct{}
 
-func (items ItemListCollection) ContainsItem(itemId string) bool {
-	for _, i := range items {
-		if i.ItemId == itemId {
-			return true
-		}
-	}
-	return false
+func init() {
+	ItemListDao = &itemListDao{}
 }
 
-func (i *ItemListDto) InsertItemToList() apierrors.ApiError {
+func (dao *itemListDao) InsertItemToList(itemList ItemListDto) (*ItemListDto, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(insertItemToList)
 	if err != nil {
 		logrus.Error("error when trying to prepare insert item to list statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to insert item to list", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to insert item to list", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
-	_, saveErr := stmt.Exec(i.ListId, i.ItemId, i.Status, i.VariationId)
+	_, saveErr := stmt.Exec(itemList.ListId, itemList.ItemId, itemList.Status, itemList.VariationId)
 	if saveErr != nil {
-		return apierrors.NewInternalServerApiError("error when trying to save item to list", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to save item to list", error_utils.GetDatabaseGenericError())
 	}
 
-	logrus.Info(fmt.Sprintf("successfully added item to list %d", i.ListId))
-	return nil
+	logrus.Info(fmt.Sprintf("successfully added item %s to list %d", itemList.ItemId, itemList.ListId))
+	return &itemList, nil
 }
 
-func (i *ItemListDto) DeleteItemFromList() apierrors.ApiError {
+func (dao *itemListDao) DeleteItemFromList(itemId string, listId int64) apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(removeItemFromList)
 	if err != nil {
 		logrus.Error("error when trying to prepare delete item from list statement", err)
@@ -59,16 +57,16 @@ func (i *ItemListDto) DeleteItemFromList() apierrors.ApiError {
 	}
 	defer stmt.Close()
 
-	_, deleteErr := stmt.Exec(i.ItemId, i.ListId)
+	_, deleteErr := stmt.Exec(itemId, listId)
 	if deleteErr != nil {
 		return apierrors.NewInternalServerApiError("error when trying to delete item from list", error_utils.GetDatabaseGenericError())
 	}
 
-	logrus.Info(fmt.Sprintf("successfully deleted item %s from list %d", i.ItemId, i.ListId))
+	logrus.Info(fmt.Sprintf("successfully deleted item %s from list %d", itemId, listId))
 	return nil
 }
 
-func (i *ItemListDto) GetItemsFromList() (ItemListCollection, apierrors.ApiError) {
+func (dao *itemListDao) GetItemsFromList(listId int64) (ItemListCollection, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(getItemsFromList)
 	if err != nil {
 		logrus.Error("error when trying to prepare get all items from list statement", err)
@@ -76,7 +74,7 @@ func (i *ItemListDto) GetItemsFromList() (ItemListCollection, apierrors.ApiError
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(i.ListId)
+	rows, err := stmt.Query(listId)
 	if err != nil {
 		logrus.Error("error while getting all items from list", err)
 		return nil, apierrors.NewInternalServerApiError("error getting all items from list", error_utils.GetDatabaseGenericError())
@@ -97,7 +95,7 @@ func (i *ItemListDto) GetItemsFromList() (ItemListCollection, apierrors.ApiError
 	return result, nil
 }
 
-func (i *ItemListDto) CheckItem() apierrors.ApiError {
+func (dao *itemListDao) UpdateItemStatus(itemId string, listId int64, status string) apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(checkItem)
 	if err != nil {
 		logrus.Error("error when trying to prepare get check item from list statement", err)
@@ -105,12 +103,12 @@ func (i *ItemListDto) CheckItem() apierrors.ApiError {
 	}
 	defer stmt.Close()
 
-	_, updateErr := stmt.Exec(i.Status, i.ItemId, i.ListId)
+	_, updateErr := stmt.Exec(status, itemId, listId)
 	if updateErr != nil {
 		logrus.Error("error when trying to check item", updateErr)
 		return apierrors.NewInternalServerApiError("error when trying to check item", error_utils.GetDatabaseGenericError())
 	}
 
-	logrus.Info(fmt.Sprintf("successfully updated item %s", i.ItemId))
+	logrus.Info(fmt.Sprintf("successfully updated item %s from list %d", itemId, listId))
 	return nil
 }

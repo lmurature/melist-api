@@ -10,7 +10,7 @@ const (
 	PrivacyTypePublic  = "public"
 )
 
-type ListDto struct {
+type List struct {
 	Id          int64  `json:"id"`
 	OwnerId     int64  `json:"owner_id"`
 	Title       string `json:"title"`
@@ -19,16 +19,16 @@ type ListDto struct {
 	DateCreated string `json:"date_created"`
 }
 
-type Lists []ListDto
+type Lists []List
 
-func (l ListDto) Validate() apierrors.ApiError {
+func (l List) Validate() apierrors.ApiError {
 	if l.OwnerId == 0 || l.Title == "" || l.Privacy == "" || (l.Privacy != PrivacyTypePrivate && l.Privacy != PrivacyTypePublic) {
 		return apierrors.NewBadRequestApiError("invalid list values. Required values: title, privacy (private or public)")
 	}
 	return nil
 }
 
-func (l ListDto) ValidateAddItems(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
+func (l List) ValidateAddItems(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
 	if l.Privacy == PrivacyTypePrivate {
 		if callerId == l.OwnerId {
 			return nil
@@ -44,14 +44,14 @@ func (l ListDto) ValidateAddItems(callerId int64, configs share.ShareConfigs) ap
 	return apierrors.NewForbiddenApiError("you have no access to this list")
 }
 
-func (l ListDto) ValidateUpdatability(callerId int64) apierrors.ApiError {
+func (l List) ValidateUpdatability(callerId int64) apierrors.ApiError {
 	if l.OwnerId != callerId {
 		return apierrors.NewForbiddenApiError("you have no access to update this list")
 	}
 	return nil
 }
 
-func (l ListDto) ValidateCheckItems(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
+func (l List) ValidateCheckItems(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
 	if l.Privacy == PrivacyTypePrivate {
 		if callerId == l.OwnerId {
 			return nil
@@ -67,7 +67,7 @@ func (l ListDto) ValidateCheckItems(callerId int64, configs share.ShareConfigs) 
 	return apierrors.NewForbiddenApiError("you have no access to this list")
 }
 
-func (l ListDto) ValidateReadability(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
+func (l List) ValidateReadability(callerId int64, configs share.ShareConfigs) apierrors.ApiError {
 	if l.Privacy == PrivacyTypePrivate {
 		if callerId == l.OwnerId {
 			return nil
@@ -83,7 +83,7 @@ func (l ListDto) ValidateReadability(callerId int64, configs share.ShareConfigs)
 	return apierrors.NewForbiddenApiError("you have no access to this list")
 }
 
-func (l *ListDto) UpdateFields(updatedList ListDto) {
+func (l *List) UpdateFields(updatedList List) {
 	if updatedList.Privacy != "" && (updatedList.Privacy == PrivacyTypePrivate || updatedList.Privacy == PrivacyTypePublic) {
 		l.Privacy = updatedList.Privacy
 	}

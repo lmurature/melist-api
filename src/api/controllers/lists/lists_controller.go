@@ -11,7 +11,7 @@ import (
 )
 
 func CreateList(c *gin.Context) {
-	var listDto lists.ListDto
+	var listDto lists.List
 	if err := c.ShouldBindJSON(&listDto); err != nil {
 		err := apierrors.NewBadRequestApiError("invalid list json body")
 		c.JSON(err.Status(), err)
@@ -62,7 +62,7 @@ func UpdateList(c *gin.Context) {
 		return
 	}
 
-	var listDto lists.ListDto
+	var listDto lists.List
 	if err := c.ShouldBindJSON(&listDto); err != nil {
 		err := apierrors.NewBadRequestApiError("invalid list json body")
 		c.JSON(err.Status(), err)

@@ -16,9 +16,9 @@ import (
 type listsService struct{}
 
 type listsServiceInterface interface {
-	CreateList(dto lists.ListDto) (*lists.ListDto, apierrors.ApiError)
-	UpdateList(dto lists.ListDto, callerId int64) (*lists.ListDto, apierrors.ApiError)
-	GetList(listId int64, callerId int64) (*lists.ListDto, apierrors.ApiError)
+	CreateList(dto lists.List) (*lists.List, apierrors.ApiError)
+	UpdateList(dto lists.List, callerId int64) (*lists.List, apierrors.ApiError)
+	GetList(listId int64, callerId int64) (*lists.List, apierrors.ApiError)
 	GetListShareConfigs(listId int64, callerId int64) (share.ShareConfigs, apierrors.ApiError)
 	GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) apierrors.ApiError
 	SearchPublicLists() (lists.Lists, apierrors.ApiError)
@@ -38,22 +38,24 @@ func init() {
 	ListsService = listsService{}
 }
 
-func (l listsService) CreateList(dto lists.ListDto) (*lists.ListDto, apierrors.ApiError) {
-	if err := dto.Validate(); err != nil {
+func (l listsService) CreateList(list lists.List) (*lists.List, apierrors.ApiError) {
+	if err := list.Validate(); err != nil {
 		return nil, err
 	}
 
-	dto.DateCreated = date_utils.GetNowDateFormatted()
-	if err := dto.Save(); err != nil {
+	list.DateCreated = date_utils.GetNowDateFormatted()
+
+	result, err := lists.ListDao.CreateList(list)
+	if err != nil {
 		return nil, err
 	}
 
-	return &dto, nil
+	return result, nil
 }
 
-func (l listsService) UpdateList(updatedList lists.ListDto, callerId int64) (*lists.ListDto, apierrors.ApiError) {
-	actualList := lists.ListDto{Id: updatedList.Id}
-	if err := actualList.Get(); err != nil {
+func (l listsService) UpdateList(updatedList lists.List, callerId int64) (*lists.List, apierrors.ApiError) {
+	actualList, err := lists.ListDao.GetList(updatedList.Id)
+	if err != nil {
 		return nil, err
 	}
 
@@ -63,38 +65,37 @@ func (l listsService) UpdateList(updatedList lists.ListDto, callerId int64) (*li
 
 	actualList.UpdateFields(updatedList)
 
-	if err := actualList.Update(); err != nil {
+	result, err := lists.ListDao.UpdateList(*actualList)
+	if err != nil {
 		return nil, err
 	}
 
-	return &actualList, nil
+	return result, nil
 }
 
-func (l listsService) GetList(listId int64, callerId int64) (*lists.ListDto, apierrors.ApiError) {
-	dto := lists.ListDto{Id: listId}
-
-	if err := dto.Get(); err != nil {
+func (l listsService) GetList(listId int64, callerId int64) (*lists.List, apierrors.ApiError) {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
 		return nil, err
 	}
 
-	listShareConfigs := share.ShareConfig{ListId: listId}
-	configs, err := listShareConfigs.GetAllSharedConfigsByList()
+	configs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
 			return nil, err
 		}
 	}
 
-	if err := dto.ValidateReadability(callerId, configs); err != nil {
+	if err := list.ValidateReadability(callerId, configs); err != nil {
 		return nil, err
 	}
 
-	return &dto, nil
+	return list, nil
 }
 
 func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) apierrors.ApiError {
-	list := lists.ListDto{Id: listId}
-	if err := list.Get(); err != nil {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
 		return err
 	}
 
@@ -114,8 +115,7 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config sha
 		return apierrors.NewApiError("invalid request", "invalid request for sharing access to users", http.StatusBadRequest, errorCauseList)
 	}
 
-	listShareConfigs := share.ShareConfig{ListId: listId}
-	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
 			return err
@@ -126,10 +126,10 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config sha
 	for i := range config {
 
 		var dbErr apierrors.ApiError
-		if slice.GetShareConfigIndexByUser(actualConfigs, config[i].UserId) {
-			dbErr = config[i].Update()
+		if slice.ShareConfigUserExists(actualConfigs, config[i].UserId) {
+			_, dbErr = share.ShareConfigDao.UpdateShareConfig(config[i])
 		} else {
-			dbErr = config[i].Save()
+			_, dbErr = share.ShareConfigDao.CreateShareConfig(config[i])
 		}
 
 		if dbErr != nil {
@@ -147,29 +147,26 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config sha
 }
 
 func (l listsService) SearchPublicLists() (lists.Lists, apierrors.ApiError) {
-	dto := lists.ListDto{}
-	return dto.GetAllPublicLists()
+	return lists.ListDao.GetPublicLists()
 }
 
 func (l listsService) GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError) {
-	dto := lists.ListDto{OwnerId: ownerId}
-	return dto.GetListsFromOwner()
+	return lists.ListDao.GetListsFromOwner(ownerId)
 }
 
 func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError) {
-	dto := share.ShareConfig{UserId: userId}
-	userSharedConfigs, err := dto.GetAllShareConfigsByUser()
+	userSharedConfigs, err := share.ShareConfigDao.GetAllShareConfigsByUser(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]lists.ListDto, 0)
+	result := make([]lists.List, 0)
 	for _, c := range userSharedConfigs {
-		listDto := lists.ListDto{Id: c.ListId}
-		if err := listDto.Get(); err != nil {
+		listDto, err := lists.ListDao.GetList(c.ListId)
+		if err != nil {
 			return nil, err
 		}
-		result = append(result, listDto)
+		result = append(result, *listDto)
 	}
 
 	if len(result) == 0 {
@@ -180,9 +177,8 @@ func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.Api
 }
 
 func (l listsService) GetListShareConfigs(listId int64, callerId int64) (share.ShareConfigs, apierrors.ApiError) {
-	list := lists.ListDto{Id: listId}
-
-	if err := list.Get(); err != nil {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
 		return nil, err
 	}
 
@@ -190,9 +186,7 @@ func (l listsService) GetListShareConfigs(listId int64, callerId int64) (share.S
 		return nil, apierrors.NewUnauthorizedApiError("you have no access to this list's share config")
 	}
 
-	config := share.ShareConfig{ListId: listId}
-
-	configList, err := config.GetAllSharedConfigsByList()
+	configList, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		return nil, err
 	}
@@ -201,13 +195,12 @@ func (l listsService) GetListShareConfigs(listId int64, callerId int64) (share.S
 }
 
 func (l listsService) AddItemToList(itemId string, variationId int64, listId int64, callerId int64) apierrors.ApiError {
-	list := lists.ListDto{Id: listId}
-	if err := list.Get(); err != nil {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
 		return err
 	}
 
-	listShareConfigs := share.ShareConfig{ListId: listId}
-	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
 			return err
@@ -219,14 +212,7 @@ func (l listsService) AddItemToList(itemId string, variationId int64, listId int
 	}
 
 	// Check if list already has the item
-	itemListDto := items.ItemListDto{
-		ItemId:      itemId,
-		ListId:      listId,
-		Status:      "not_checked",
-		VariationId: variationId,
-	}
-
-	itemCollection, err := itemListDto.GetItemsFromList()
+	itemCollection, err := items.ItemListDao.GetItemsFromList(listId)
 	if err != nil {
 		return err
 	}
@@ -235,22 +221,33 @@ func (l listsService) AddItemToList(itemId string, variationId int64, listId int
 		return apierrors.NewBadRequestApiError(fmt.Sprintf("item %s is already in the list", itemId))
 	}
 
-	itemDto := items.ItemDto(itemId)
-	if err := itemDto.InsertItem(); err != nil {
+	// insert into item table
+	if err := items.ItemDao.InsertItem(itemId); err != nil {
 		return err
 	}
 
-	return itemListDto.InsertItemToList()
+	itemListDto := items.ItemListDto{
+		ItemId:      itemId,
+		ListId:      listId,
+		Status:      items.StatusNotChecked,
+		VariationId: variationId,
+	}
+
+	_, err = items.ItemListDao.InsertItemToList(itemListDto)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) (items.ItemListCollection, apierrors.ApiError) {
-	list := lists.ListDto{Id: listId}
-	if err := list.Get(); err != nil {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
 		return nil, err
 	}
 
-	listShareConfigs := share.ShareConfig{ListId: listId}
-	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
 			return nil, err
@@ -261,11 +258,7 @@ func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) 
 		return nil, err
 	}
 
-	itemListDto := items.ItemListDto{
-		ListId: listId,
-	}
-
-	itemListCollection, err := itemListDto.GetItemsFromList()
+	itemListCollection, err := items.ItemListDao.GetItemsFromList(listId)
 	if err != nil {
 		return nil, err
 	}
@@ -299,13 +292,12 @@ func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) 
 }
 
 func (l listsService) DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError {
-	list := lists.ListDto{Id: listId}
-	if err := list.Get(); err != nil {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
 		return err
 	}
 
-	listShareConfigs := share.ShareConfig{ListId: listId}
-	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
 			return err
@@ -316,22 +308,16 @@ func (l listsService) DeleteItemFromList(itemId string, listId int64, callerId i
 		return err
 	}
 
-	itemListDto := items.ItemListDto{
-		ItemId: itemId,
-		ListId: listId,
-	}
-
-	return itemListDto.DeleteItemFromList()
+	return items.ItemListDao.DeleteItemFromList(itemId, listId)
 }
 
 func (l listsService) CheckItem(itemId string, listId int64, callerId int64) apierrors.ApiError {
-	list := lists.ListDto{Id: listId}
-	if err := list.Get(); err != nil {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
 		return err
 	}
 
-	listShareConfigs := share.ShareConfig{ListId: listId}
-	actualConfigs, err := listShareConfigs.GetAllSharedConfigsByList()
+	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
 			return err
@@ -342,11 +328,5 @@ func (l listsService) CheckItem(itemId string, listId int64, callerId int64) api
 		return err
 	}
 
-	itemListDto := items.ItemListDto{
-		ItemId: itemId,
-		ListId: listId,
-		Status: "checked",
-	}
-
-	return itemListDto.CheckItem()
+	return items.ItemListDao.UpdateItemStatus(itemId, listId, items.StatusChecked)
 }

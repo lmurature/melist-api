@@ -16,76 +16,95 @@ const (
 	updateUser  = "UPDATE user SET first_name=?, last_name=?, email=?, nickname=?, access_token=?, refresh_token=? WHERE id=?"
 )
 
-func (u *UserDto) Get() apierrors.ApiError {
+var (
+	UserDao userDaoInterface
+)
+
+type userDaoInterface interface {
+	GetUser(userId int64) (*MelistUser, apierrors.ApiError)
+	CreateUser(user MelistUser) (*MelistUser, apierrors.ApiError)
+	GetByEmail(email string) (*MelistUser, apierrors.ApiError)
+	UpdateUser(user MelistUser) (*MelistUser, apierrors.ApiError)
+}
+
+type userDao struct{}
+
+func init() {
+	UserDao = &userDao{}
+}
+
+func (dao *userDao) GetUser(userId int64) (*MelistUser, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(getUser)
 	if err != nil {
 		logrus.Error("error when trying to prepare get user statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to get user", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to get user", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
-	result := stmt.QueryRow(u.Id)
+	result := stmt.QueryRow(userId)
 
+	var u MelistUser
 	if queryErr := result.Scan(&u.Id, &u.FirstName, u.LastName, u.Nickname, u.Email, u.DateCreated, u.AccessToken, u.RefreshToken); queryErr != nil {
 		logrus.Error("user not found", err)
-		return apierrors.NewNotFoundApiError("user not found")
+		return nil, apierrors.NewNotFoundApiError("user not found")
 	}
 
-	return nil
+	return &u, nil
 }
 
-func (u *UserDto) Save() apierrors.ApiError {
+func (dao *userDao) CreateUser(user MelistUser) (*MelistUser, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(insertUser)
 	if err != nil {
 		logrus.Error("error when trying to prepare insert user statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to insert user", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to insert user", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
-	_, saveErr := stmt.Exec(u.Id, u.FirstName, u.LastName, u.Email, u.Nickname, u.DateCreated, u.AccessToken, u.RefreshToken)
+	_, saveErr := stmt.Exec(user.Id, user.FirstName, user.LastName, user.Email, user.Nickname, user.DateCreated, user.AccessToken, user.RefreshToken)
 	if saveErr != nil {
 		if !strings.Contains(saveErr.Error(), "Duplicate entry") {
 			logrus.Error("error when trying to save user", saveErr)
 		}
-		return apierrors.NewInternalServerApiError("error when trying to save user", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to save user", error_utils.GetDatabaseGenericError())
 	}
 
-	logrus.Info(fmt.Sprintf("successfully registered user %d", u.Id))
-	return nil
+	logrus.Info(fmt.Sprintf("successfully registered user %d", user.Id))
+	return &user, nil
 }
 
-func (u *UserDto) FindByEmail() apierrors.ApiError {
+func (dao *userDao) GetByEmail(email string) (*MelistUser, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(findByEmail)
 	if err != nil {
 		logrus.Error("error when trying to prepare find user by email statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to find user by email", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to find user by email", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
-	result := stmt.QueryRow(u.Id)
+	result := stmt.QueryRow(email)
 
-	if queryErr := result.Scan(&u.Id, &u.FirstName, u.LastName, u.Nickname, u.Email, u.DateCreated); queryErr != nil {
+	var user MelistUser
+	if queryErr := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Nickname, &user.Email, &user.DateCreated); queryErr != nil {
 		logrus.Error("email not found in user table", err)
-		return apierrors.NewNotFoundApiError("email not found in user table")
+		return nil, apierrors.NewNotFoundApiError("email not found in user table")
 	}
 
-	return nil
+	return &user, nil
 }
 
-func (u *UserDto) Update() apierrors.ApiError {
+func (dao *userDao) UpdateUser(user MelistUser) (*MelistUser, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(updateUser)
 	if err != nil {
 		logrus.Error("error when trying to prepare update user statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to update user", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to update user", error_utils.GetDatabaseGenericError())
 	}
 	defer stmt.Close()
 
-	_, updateErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Nickname, u.AccessToken, u.RefreshToken, u.Id)
+	_, updateErr := stmt.Exec(user.FirstName, user.LastName, user.Email, user.Nickname, user.AccessToken, user.RefreshToken, user.Id)
 	if updateErr != nil {
 		logrus.Error("error when trying to update user", updateErr)
-		return apierrors.NewInternalServerApiError("error when trying to update user", error_utils.GetDatabaseGenericError())
+		return nil, apierrors.NewInternalServerApiError("error when trying to update user", error_utils.GetDatabaseGenericError())
 	}
 
-	logrus.Info(fmt.Sprintf("successfully updated user %d", u.Id))
-	return nil
+	logrus.Info(fmt.Sprintf("successfully updated user %d", user.Id))
+	return &user, nil
 }

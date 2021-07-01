@@ -15,23 +15,41 @@ const (
 	deleteShareConfig     = "DELETE FROM share_config s WHERE (s.user_id=? AND s.list_id=?);"
 )
 
-func (s *ShareConfig) Save() apierrors.ApiError {
+var (
+	ShareConfigDao shareConfigDaoInterface
+)
+
+type shareConfigDaoInterface interface {
+	CreateShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError)
+	GetAllShareConfigsByUser(userId int64) (ShareConfigs, apierrors.ApiError)
+	GetAllShareConfigsByList(listId int64) (ShareConfigs, apierrors.ApiError)
+	UpdateShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError)
+	DeleteShareConfig(userId int64, listId int64) apierrors.ApiError
+}
+
+type shareConfigDao struct{}
+
+func init() {
+	ShareConfigDao = &shareConfigDao{}
+}
+
+func (dao *shareConfigDao) CreateShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(insertShareConfig)
 	if err != nil {
 		logrus.Error("error when trying to prepare insert share config statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to insert share config", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error when trying to insert share config", errors.New("database error"))
 	}
 	defer stmt.Close()
 
-	_, saveErr := stmt.Exec(s.UserId, s.ListId, s.ShareType)
+	_, saveErr := stmt.Exec(conf.UserId, conf.ListId, conf.ShareType)
 	if saveErr != nil {
-		return apierrors.NewInternalServerApiError("error when trying to save share config", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error when trying to save share config", errors.New("database error"))
 	}
 
-	return nil
+	return &conf, nil
 }
 
-func (s *ShareConfig) GetAllShareConfigsByUser() (ShareConfigs, apierrors.ApiError) {
+func (dao *shareConfigDao) GetAllShareConfigsByUser(userId int64) (ShareConfigs, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(getShareConfigsByUser)
 	if err != nil {
 		logrus.Error("error when trying to prepare get share config by user statement", err)
@@ -39,7 +57,7 @@ func (s *ShareConfig) GetAllShareConfigsByUser() (ShareConfigs, apierrors.ApiErr
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(s.UserId)
+	rows, err := stmt.Query(userId)
 	if err != nil {
 		logrus.Error("error while getting share config lists from user", err)
 		return nil, apierrors.NewInternalServerApiError("error getting share config lists from user", errors.New("database error"))
@@ -64,7 +82,7 @@ func (s *ShareConfig) GetAllShareConfigsByUser() (ShareConfigs, apierrors.ApiErr
 	return result, nil
 }
 
-func (s *ShareConfig) GetAllSharedConfigsByList() (ShareConfigs, apierrors.ApiError) {
+func (dao *shareConfigDao) GetAllShareConfigsByList(listId int64) (ShareConfigs, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(getShareConfigsByList)
 	if err != nil {
 		logrus.Error("error when trying to prepare get share config by list statement", err)
@@ -72,7 +90,7 @@ func (s *ShareConfig) GetAllSharedConfigsByList() (ShareConfigs, apierrors.ApiEr
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(s.ListId)
+	rows, err := stmt.Query(listId)
 	if err != nil {
 		logrus.Error("error while getting share config lists from list", err)
 		return nil, apierrors.NewInternalServerApiError("error getting share config lists from list", errors.New("database error"))
@@ -97,23 +115,23 @@ func (s *ShareConfig) GetAllSharedConfigsByList() (ShareConfigs, apierrors.ApiEr
 	return result, nil
 }
 
-func (s *ShareConfig) Update() apierrors.ApiError {
+func (dao *shareConfigDao) UpdateShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError){
 	stmt, err := database.DbClient.Prepare(updateShareConfigType)
 	if err != nil {
 		logrus.Error("error when trying to prepare update share config statement", err)
-		return apierrors.NewInternalServerApiError("error when trying to update share configs", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error when trying to update share configs", errors.New("database error"))
 	}
 	defer stmt.Close()
 
-	_, updateErr := stmt.Exec(s.ShareType, s.UserId, s.ListId)
+	_, updateErr := stmt.Exec(conf.ShareType, conf.UserId, conf.ListId)
 	if updateErr != nil {
-		return apierrors.NewInternalServerApiError("error when trying to update share config", errors.New("database error"))
+		return nil, apierrors.NewInternalServerApiError("error when trying to update share config", errors.New("database error"))
 	}
 
-	return nil
+	return &conf, nil
 }
 
-func (s *ShareConfig) Delete() apierrors.ApiError {
+func (dao *shareConfigDao) DeleteShareConfig(userId int64, listId int64) apierrors.ApiError {
 	stmt, err := database.DbClient.Prepare(deleteShareConfig)
 	if err != nil {
 		logrus.Error("error when trying to prepare delete share config statement", err)
@@ -121,7 +139,7 @@ func (s *ShareConfig) Delete() apierrors.ApiError {
 	}
 	defer stmt.Close()
 
-	_, deleteErr := stmt.Exec(s.UserId, s.ListId)
+	_, deleteErr := stmt.Exec(userId, listId)
 	if deleteErr != nil {
 		return apierrors.NewInternalServerApiError("error when trying to delete share config", errors.New("database error"))
 	}

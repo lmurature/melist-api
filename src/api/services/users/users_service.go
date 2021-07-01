@@ -15,8 +15,8 @@ type usersServiceInterface interface {
 	GetMeliUser(userId int64) (*users.User, apierrors.ApiError)
 	GetMyUser(accessToken string) (*users.User, apierrors.ApiError)
 	SaveUserToDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError
-	GetUserFromDb(userId int64) (*users.UserDto, apierrors.ApiError)
-	FindUserByEmail(email string) (*users.UserDto, apierrors.ApiError)
+	GetUserFromDb(userId int64) (*users.MelistUser, apierrors.ApiError)
+	FindUserByEmail(email string) (*users.MelistUser, apierrors.ApiError)
 	UpdateUserDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError
 }
 
@@ -47,7 +47,7 @@ func (s *usersService) GetMyUser(accessToken string) (*users.User, apierrors.Api
 }
 
 func (s *usersService) SaveUserToDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError {
-	userDto := users.UserDto{
+	user := users.MelistUser{
 		Id:           u.Id,
 		FirstName:    u.FirstName,
 		LastName:     u.LastName,
@@ -57,27 +57,33 @@ func (s *usersService) SaveUserToDb(u users.User, accessToken string, refreshTok
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
-	return userDto.Save()
+
+	_, err := users.UserDao.CreateUser(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *usersService) GetUserFromDb(userId int64) (*users.UserDto, apierrors.ApiError) {
-	userDto := users.UserDto{Id: userId}
-	if err := userDto.Get(); err != nil {
+func (s *usersService) GetUserFromDb(userId int64) (*users.MelistUser, apierrors.ApiError) {
+	user, err := users.UserDao.GetUser(userId)
+	if err != nil {
 		return nil, err
 	}
-	return &userDto, nil
+	return user, nil
 }
 
-func (s *usersService) FindUserByEmail(email string) (*users.UserDto, apierrors.ApiError) {
-	userDto := users.UserDto{Email: email}
-	if err := userDto.FindByEmail(); err != nil {
+func (s *usersService) FindUserByEmail(email string) (*users.MelistUser, apierrors.ApiError) {
+	user, err := users.UserDao.GetByEmail(email)
+	if err != nil {
 		return nil, err
 	}
-	return &userDto, nil
+	return user, nil
 }
 
 func (s *usersService) UpdateUserDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError {
-	userDto := users.UserDto{
+	user := users.MelistUser{
 		Id:           u.Id,
 		FirstName:    u.FirstName,
 		LastName:     u.LastName,
@@ -87,5 +93,10 @@ func (s *usersService) UpdateUserDb(u users.User, accessToken string, refreshTok
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
-	return userDto.Update()
+	_, err := users.UserDao.UpdateUser(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
