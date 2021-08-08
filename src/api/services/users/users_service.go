@@ -18,6 +18,7 @@ type usersServiceInterface interface {
 	GetUserFromDb(userId int64) (*users.MelistUser, apierrors.ApiError)
 	FindUserByEmail(email string) (*users.MelistUser, apierrors.ApiError)
 	UpdateUserDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError
+	SearchUsers(query string) ([]users.MelistUser, apierrors.ApiError)
 }
 
 var (
@@ -99,4 +100,17 @@ func (s *usersService) UpdateUserDb(u users.User, accessToken string, refreshTok
 	}
 
 	return nil
+}
+
+func (s *usersService) SearchUsers(query string) ([]users.MelistUser, apierrors.ApiError) {
+	if query == "" {
+		return nil, apierrors.NewBadRequestApiError("search users query should not be empty")
+	}
+
+	result, err := users.UserDao.SearchUsers(query)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

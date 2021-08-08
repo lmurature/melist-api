@@ -9,6 +9,7 @@ const (
 	ShareTypeRead = "read"
 	ShareTypeWrite = "write"
 	ShareTypeCheck = "check"
+	ShareTypeAdmin = "admin"
 )
 
 type ShareConfig struct {

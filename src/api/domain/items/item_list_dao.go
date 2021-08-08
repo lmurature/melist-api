@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	getItemsFromList   = "SELECT l.list_id, l.item_id, l.status, l.variation_external_id FROM list_item l WHERE l.list_id=?;"
-	insertItemToList   = "INSERT INTO list_item(list_id, item_id, status, variation_external_id) VALUES(?,?,?,?);"
+	getItemsFromList   = "SELECT l.list_id, l.item_id, l.status, l.variation_external_id, l.user_id FROM list_item l WHERE l.list_id=?;"
+	insertItemToList   = "INSERT INTO list_item(list_id, item_id, status, variation_external_id,user_id) VALUES(?,?,?,?,?);"
 	removeItemFromList = "DELETE FROM list_item l WHERE l.item_id=? and l.list_id=?;"
 	checkItem          = "UPDATE list_item SET status=? WHERE item_id=? and list_id=?;"
 )
@@ -40,8 +40,9 @@ func (dao *itemListDao) InsertItemToList(itemList ItemListDto) (*ItemListDto, ap
 	}
 	defer stmt.Close()
 
-	_, saveErr := stmt.Exec(itemList.ListId, itemList.ItemId, itemList.Status, itemList.VariationId)
+	_, saveErr := stmt.Exec(itemList.ListId, itemList.ItemId, itemList.Status, itemList.VariationId, itemList.UserId)
 	if saveErr != nil {
+		logrus.Error("error inserting item to list", saveErr)
 		return nil, apierrors.NewInternalServerApiError("error when trying to save item to list", error_utils.GetDatabaseGenericError())
 	}
 
@@ -85,7 +86,7 @@ func (dao *itemListDao) GetItemsFromList(listId int64) (ItemListCollection, apie
 
 	for rows.Next() {
 		var i ItemListDto
-		if err := rows.Scan(&i.ListId, &i.ItemId, &i.Status, &i.VariationId); err != nil {
+		if err := rows.Scan(&i.ListId, &i.ItemId, &i.Status, &i.VariationId, &i.UserId); err != nil {
 			logrus.Error("error when scan item row into item struct", err)
 			return nil, apierrors.NewInternalServerApiError("error when tying to get all items from list", error_utils.GetDatabaseGenericError())
 		}

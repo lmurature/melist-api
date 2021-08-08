@@ -14,7 +14,7 @@ type MelistUser struct {
 	LastName     string `json:"last_name"`
 	Nickname     string `json:"nickname"`
 	Email        string `json:"email"`
-	DateCreated  string `json:"date_created"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	DateCreated  string `json:"date_created,omitempty"`
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }

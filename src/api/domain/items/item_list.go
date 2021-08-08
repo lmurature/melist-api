@@ -11,6 +11,7 @@ type ItemListDto struct {
 	Status      string `json:"status"`
 	VariationId int64  `json:"variation_id,omitempty"`
 	MeliItem    *Item  `json:"item,omitempty"`
+	UserId      int64  `json:"user_id,omitempty"`
 }
 
 type ItemListCollection []ItemListDto

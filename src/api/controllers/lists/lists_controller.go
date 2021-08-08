@@ -102,13 +102,13 @@ func GiveUsersAccessToList(c *gin.Context) {
 	userId, _ := c.Get("user_id")
 	callerId := userId.(int64)
 
-	resErr := lists_service.ListsService.GiveAccessToUsers(listId, callerId, shareConfigs)
+	result, resErr := lists_service.ListsService.GiveAccessToUsers(listId, callerId, shareConfigs)
 	if resErr != nil {
 		c.JSON(resErr.Status(), resErr)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "granted"})
+	c.JSON(http.StatusOK, result)
 }
 
 func SearchPublicLists(c *gin.Context) {
@@ -291,4 +291,80 @@ func CheckItem(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "checked"})
+}
+
+func GetFavoriteLists(c *gin.Context) {
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	result, err := lists_service.ListsService.GetUserFavoriteLists(callerId)
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func SetListFavorite(c *gin.Context) {
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	favErr := lists_service.ListsService.MakeFavoriteList(listId, callerId)
+	if favErr != nil {
+		c.JSON(favErr.Status(), favErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "favorite added successfully"})
+}
+
+func UnsetListFavorite(c *gin.Context) {
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	favErr := lists_service.ListsService.RemoveFavoriteList(listId, callerId)
+	if favErr != nil {
+		c.JSON(favErr.Status(), favErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "favorite removed successfully"})
+}
+
+func GetMyPermissions(c *gin.Context) {
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	permissions, permErr := lists_service.ListsService.GetUserPermissions(listId, callerId)
+	if permErr != nil {
+		c.JSON(permErr.Status(), permErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, permissions)
 }

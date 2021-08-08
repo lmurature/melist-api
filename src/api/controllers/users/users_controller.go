@@ -17,3 +17,13 @@ func GetUserMe(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+func SearchUsers(c *gin.Context) {
+	result, err := users_service.UsersService.SearchUsers(c.Query("q"))
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

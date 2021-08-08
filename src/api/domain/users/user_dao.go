@@ -14,6 +14,7 @@ const (
 	insertUser  = "INSERT INTO user(id, first_name, last_name, email, nickname, date_created, access_token, refresh_token) VALUES(?,?,?,?,?,?,?,?);"
 	findByEmail = "SELECT u.id, u.first_name, u.last_name, u.nickname, u.email, u.date_created FROM user u WHERE u.email=?;"
 	updateUser  = "UPDATE user SET first_name=?, last_name=?, email=?, nickname=?, access_token=?, refresh_token=? WHERE id=?"
+	searchUser = "SELECT u.id, u.first_name, u.last_name, u.nickname, u.email FROM user u WHERE u.email LIKE CONCAT('%', ?, '%') OR u.first_name LIKE CONCAT('%', ?, '%') OR u.last_name LIKE CONCAT('%', ?, '%');"
 )
 
 var (
@@ -25,6 +26,7 @@ type userDaoInterface interface {
 	CreateUser(user MelistUser) (*MelistUser, apierrors.ApiError)
 	GetByEmail(email string) (*MelistUser, apierrors.ApiError)
 	UpdateUser(user MelistUser) (*MelistUser, apierrors.ApiError)
+	SearchUsers(query string) ([]MelistUser, apierrors.ApiError)
 }
 
 type userDao struct{}
@@ -107,4 +109,33 @@ func (dao *userDao) UpdateUser(user MelistUser) (*MelistUser, apierrors.ApiError
 
 	logrus.Info(fmt.Sprintf("successfully updated user %d", user.Id))
 	return &user, nil
+}
+
+func (dao *userDao) SearchUsers(query string) ([]MelistUser, apierrors.ApiError) {
+	stmt, err := database.DbClient.Prepare(searchUser)
+	if err != nil {
+		logrus.Error("error when trying to prepare search users statement", err)
+		return nil, apierrors.NewInternalServerApiError("error when trying to search users", error_utils.GetDatabaseGenericError())
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(query, query, query)
+	if err != nil {
+		logrus.Error("error when querying users search into database")
+		return nil, apierrors.NewInternalServerApiError("error when trying to search users", error_utils.GetDatabaseGenericError())
+	}
+	defer rows.Close()
+
+	result := make([]MelistUser, 0)
+
+	for rows.Next() {
+		var u MelistUser
+		if err := rows.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Nickname, &u.Email); err != nil {
+			logrus.Error("error scanning values from search into melist user structure", err)
+			return nil, apierrors.NewInternalServerApiError("error scanning search users into melist user structure", error_utils.GetDatabaseGenericError())
+		}
+		result = append(result, u)
+	}
+
+	return result, nil
 }

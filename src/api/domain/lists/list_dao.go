@@ -9,11 +9,14 @@ import (
 )
 
 const (
-	getList              = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.id=?;"
-	insertList           = "INSERT INTO list(owner_id, title, description, privacy, date_created) VALUES(?,?,?,?,?);"
-	updateList           = "UPDATE list SET title=?, description=?, privacy=? WHERE id=?;"
-	getAllPublicLists    = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.privacy='public';"
-	getAllListsFromOwner = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.owner_id=?;"
+	getList                 = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.id=?;"
+	insertList              = "INSERT INTO list(owner_id, title, description, privacy, date_created) VALUES(?,?,?,?,?);"
+	updateList              = "UPDATE list SET title=?, description=?, privacy=? WHERE id=?;"
+	getAllPublicLists       = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.privacy='public';"
+	getAllListsFromOwner    = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l WHERE l.owner_id=?;"
+	getAllUserFavoriteLists = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l INNER JOIN user_favorite_list uf ON uf.list_id=l.id WHERE uf.user_id=?;"
+	insertUserFavoriteList  = "INSERT INTO user_favorite_list (user_id, list_id) VALUES(?,?);"
+	deleteUserFavoriteList  = "DELETE FROM user_favorite_list uf WHERE uf.list_id=? AND uf.user_id=?;"
 )
 
 var (
@@ -26,6 +29,9 @@ type listDaoInterface interface {
 	UpdateList(listDto List) (*List, apierrors.ApiError)
 	GetPublicLists() (Lists, apierrors.ApiError)
 	GetListsFromOwner(ownerId int64) (Lists, apierrors.ApiError)
+	GetUserFavoriteLists(userId int64) (Lists, apierrors.ApiError)
+	SaveFavoriteList(listId int64, userId int64) apierrors.ApiError
+	RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError
 }
 
 type listDao struct{}
@@ -159,4 +165,71 @@ func (dao *listDao) GetListsFromOwner(ownerId int64) (Lists, apierrors.ApiError)
 	}
 
 	return result, nil
+}
+
+func (dao *listDao) GetUserFavoriteLists(userId int64) (Lists, apierrors.ApiError) {
+	stmt, err := database.DbClient.Prepare(getAllUserFavoriteLists)
+	if err != nil {
+		logrus.Error("error when trying to prepare get all favorite lists statement", err)
+		return nil, apierrors.NewInternalServerApiError("error when trying to get all favorite lists", error_utils.GetDatabaseGenericError())
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(userId)
+	if err != nil {
+		logrus.Error("error while getting all favorite lists", err)
+		return nil, apierrors.NewInternalServerApiError("error getting all favorite lists", error_utils.GetDatabaseGenericError())
+	}
+	defer rows.Close()
+
+	result := make([]List, 0)
+
+	for rows.Next() {
+		var list List
+		if err := rows.Scan(&list.Id, &list.OwnerId, &list.Title, &list.Description, &list.Privacy, &list.DateCreated); err != nil {
+			logrus.Error("error when scan list row into list struct", err)
+			return nil, apierrors.NewInternalServerApiError("error when tying to get all favorite lists", error_utils.GetDatabaseGenericError())
+		}
+		result = append(result, list)
+	}
+
+	if len(result) == 0 {
+		return nil, apierrors.NewNotFoundApiError(fmt.Sprintf("no favorite lists found for user %d", userId))
+	}
+
+	return result, nil
+}
+
+func (dao *listDao) SaveFavoriteList(listId int64, userId int64) apierrors.ApiError {
+	stmt, err := database.DbClient.Prepare(insertUserFavoriteList)
+	if err != nil {
+		logrus.Error("error when trying to prepare insert favorite list statement", err)
+		return apierrors.NewInternalServerApiError("error when trying to save favorite list", error_utils.GetDatabaseGenericError())
+	}
+	defer stmt.Close()
+
+	_, execErr := stmt.Exec(userId, listId)
+	if execErr != nil {
+		logrus.Error("error when trying to save favorite list", execErr)
+		return apierrors.NewInternalServerApiError("error when trying to save favorite list", error_utils.GetDatabaseGenericError())
+	}
+
+	return nil
+}
+
+func (dao *listDao) RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError {
+	stmt, err := database.DbClient.Prepare(deleteUserFavoriteList)
+	if err != nil {
+		logrus.Error("error when trying to prepare delete favorite list statement", err)
+		return apierrors.NewInternalServerApiError("error when trying to remove favorite list", error_utils.GetDatabaseGenericError())
+	}
+	defer stmt.Close()
+
+	_, execErr := stmt.Exec(listId, userId)
+	if execErr != nil {
+		logrus.Error("error when trying to remove favorite list", execErr)
+		return apierrors.NewInternalServerApiError("error when trying to remove favorite list", error_utils.GetDatabaseGenericError())
+	}
+
+	return nil
 }

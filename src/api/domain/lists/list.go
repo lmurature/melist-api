@@ -21,6 +21,15 @@ type List struct {
 
 type Lists []List
 
+func (lists Lists) ContainsList(id int64) bool {
+	for _, l := range lists {
+		if l.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (l List) Validate() apierrors.ApiError {
 	if l.OwnerId == 0 || l.Title == "" || l.Privacy == "" || (l.Privacy != PrivacyTypePrivate && l.Privacy != PrivacyTypePublic) {
 		return apierrors.NewBadRequestApiError("invalid list values. Required values: title, privacy (private or public)")

@@ -5,8 +5,10 @@ import (
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/lmurature/melist-api/src/api/domain/items"
 	"github.com/lmurature/melist-api/src/api/domain/lists"
+	"github.com/lmurature/melist-api/src/api/domain/notifications"
 	"github.com/lmurature/melist-api/src/api/domain/share"
 	items_service "github.com/lmurature/melist-api/src/api/services/items"
+	users_service "github.com/lmurature/melist-api/src/api/services/users"
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
 	"github.com/lmurature/melist-api/src/api/utils/slice"
 	"github.com/sirupsen/logrus"
@@ -20,7 +22,7 @@ type listsServiceInterface interface {
 	UpdateList(dto lists.List, callerId int64) (*lists.List, apierrors.ApiError)
 	GetList(listId int64, callerId int64) (*lists.List, apierrors.ApiError)
 	GetListShareConfigs(listId int64, callerId int64) (share.ShareConfigs, apierrors.ApiError)
-	GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) apierrors.ApiError
+	GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) (share.ShareConfigs, apierrors.ApiError)
 	SearchPublicLists() (lists.Lists, apierrors.ApiError)
 	GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError)
 	GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError)
@@ -28,6 +30,10 @@ type listsServiceInterface interface {
 	GetItemsFromList(listId int64, callerId int64, info bool) (items.ItemListCollection, apierrors.ApiError)
 	DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError
 	CheckItem(itemId string, listId int64, callerId int64) apierrors.ApiError
+	GetUserFavoriteLists(userId int64) (lists.Lists, apierrors.ApiError)
+	MakeFavoriteList(listId int64, userId int64) apierrors.ApiError
+	RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError
+	GetUserPermissions(listId int64, callerId int64) (*share.ShareConfig, apierrors.ApiError)
 }
 
 var (
@@ -93,14 +99,14 @@ func (l listsService) GetList(listId int64, callerId int64) (*lists.List, apierr
 	return list, nil
 }
 
-func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) apierrors.ApiError {
+func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) (share.ShareConfigs, apierrors.ApiError) {
 	list, err := lists.ListDao.GetList(listId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := list.ValidateUpdatability(callerId); err != nil {
-		return err
+		return nil, err
 	}
 
 	errorCauseList := make(apierrors.CauseList, 0)
@@ -112,13 +118,13 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config sha
 	}
 
 	if len(errorCauseList) > 0 {
-		return apierrors.NewApiError("invalid request", "invalid request for sharing access to users", http.StatusBadRequest, errorCauseList)
+		return nil, apierrors.NewApiError("invalid request", "invalid request for sharing access to users", http.StatusBadRequest, errorCauseList)
 	}
 
 	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
-			return err
+			return nil, err
 		}
 	}
 
@@ -140,10 +146,17 @@ func (l listsService) GiveAccessToUsers(listId int64, callerId int64, config sha
 	}
 
 	if len(errorSaving) > 0 {
-		return apierrors.NewApiError("error while trying to save share configs", "database error", http.StatusInternalServerError, errorSaving)
+		return nil, apierrors.NewApiError("error while trying to save share configs", "database error", http.StatusInternalServerError, errorSaving)
 	}
 
-	return nil
+	updatedConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return nil, err
+		}
+	}
+
+	return updatedConfigs, nil
 }
 
 func (l listsService) SearchPublicLists() (lists.Lists, apierrors.ApiError) {
@@ -222,20 +235,29 @@ func (l listsService) AddItemToList(itemId string, variationId int64, listId int
 	}
 
 	// insert into item table
-	if err := items.ItemDao.InsertItem(itemId); err != nil {
-		return err
-	}
+	items.ItemDao.InsertItem(itemId)
 
 	itemListDto := items.ItemListDto{
 		ItemId:      itemId,
 		ListId:      listId,
 		Status:      items.StatusNotChecked,
 		VariationId: variationId,
+		UserId:      callerId,
 	}
 
 	_, err = items.ItemListDao.InsertItemToList(itemListDto)
 	if err != nil {
 		return err
+	}
+
+	userData, err := users_service.UsersService.GetMeliUser(callerId)
+	if err != nil {
+		return err
+	}
+
+	result, err := notifications.NotificationsDao.SaveNotification(*notifications.NewAddedItemToListNotification(listId, itemId, userData.Nickname))
+	if err == nil {
+		logrus.Info(fmt.Sprintf("successfully notificated item %s on list %d (%v)", itemId, listId, result))
 	}
 
 	return nil
@@ -328,5 +350,102 @@ func (l listsService) CheckItem(itemId string, listId int64, callerId int64) api
 		return err
 	}
 
-	return items.ItemListDao.UpdateItemStatus(itemId, listId, items.StatusChecked)
+	if err := items.ItemListDao.UpdateItemStatus(itemId, listId, items.StatusChecked); err != nil {
+		return err
+	}
+
+	userData, err := users_service.UsersService.GetMeliUser(callerId)
+	if err != nil {
+		return err
+	}
+
+	result, err := notifications.NotificationsDao.SaveNotification(*notifications.NewCheckedItemNotification(listId, itemId, userData.Nickname))
+	if err == nil {
+		logrus.Info(fmt.Sprintf("successfully notificated checked item %s on list %d (%v)", itemId, listId, result))
+	}
+
+	return nil
+}
+
+func (l listsService) GetUserFavoriteLists(userId int64) (lists.Lists, apierrors.ApiError) {
+	return lists.ListDao.GetUserFavoriteLists(userId)
+}
+
+func (l listsService) MakeFavoriteList(listId int64, userId int64) apierrors.ApiError {
+	_, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return err
+	}
+
+	if err := lists.ListDao.SaveFavoriteList(listId, userId); err != nil {
+		return err
+	}
+
+	userData, err := users_service.UsersService.GetMeliUser(userId)
+	if err != nil {
+		return err
+	}
+
+	result, err := notifications.NotificationsDao.SaveNotification(*notifications.NewUserAddedListToFavorites(listId, userData.Nickname))
+	if err == nil {
+		logrus.Info(fmt.Sprintf("successfully notificated favorited list %d (%v)", listId, result))
+	}
+
+	return nil
+}
+
+func (l listsService) RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError {
+	_, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return err
+	}
+
+	userFavoriteLists, err := lists.ListDao.GetUserFavoriteLists(userId)
+	if err != nil {
+		return err
+	}
+
+	if !userFavoriteLists.ContainsList(listId) {
+		return apierrors.NewBadRequestApiError("list id is not in user's favorites")
+	}
+
+	return lists.ListDao.RemoveFavoriteList(listId, userId)
+}
+
+func (l listsService) GetUserPermissions(listId int64, callerId int64) (*share.ShareConfig, apierrors.ApiError) {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return nil, err
+	}
+
+	if list.OwnerId == callerId {
+		return &share.ShareConfig{
+			ListId:    listId,
+			UserId:    callerId,
+			ShareType: share.ShareTypeAdmin,
+		}, nil
+	}
+
+	shareConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return nil, err
+		}
+	}
+
+	for _, conf := range shareConfigs {
+		if conf.UserId == callerId {
+			return &conf, nil
+		}
+	}
+
+	if list.Privacy == lists.PrivacyTypePublic {
+		return &share.ShareConfig{
+			UserId:    callerId,
+			ListId:    listId,
+			ShareType: share.ShareTypeRead,
+		}, nil
+	} else {
+		return nil, apierrors.NewForbiddenApiError("you have no access to this list")
+	}
 }

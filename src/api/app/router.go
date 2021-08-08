@@ -4,6 +4,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/lmurature/melist-api/src/api/config"
+	"github.com/lmurature/melist-api/src/jobs"
+	"github.com/onatm/clockwerk"
 	"time"
 )
 
@@ -27,6 +29,10 @@ func init() {
 
 func StartApp() {
 	mapUrls()
+
+	c := clockwerk.New()
+	c.Every(2 * time.Hour).Do(jobs.ItemsJobs)
+	c.Start()
 
 	router.Run(config.ApiPort)
 }

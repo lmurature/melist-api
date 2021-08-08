@@ -9,6 +9,7 @@ type Item struct {
 	CategoryId        string          `json:"category_id"`
 	SellerId          int64           `json:"seller_id"`
 	Price             float32         `json:"price"`
+	OriginalPrice     float32         `json:"original_price"`
 	Status            string          `json:"status"`
 	InitialQuantity   int             `json:"initial_quantity"`
 	AvailableQuantity int             `json:"available_quantity"`
@@ -20,6 +21,8 @@ type Item struct {
 	Variations        []ItemVariation `json:"variations,omitempty"`
 	SubStatus         []string        `json:"sub_status"`
 	Permalink         string          `json:"permalink,omitempty"`
+	DealIds           []string        `json:"deal_ids"`
+	Thumbnail         string          `json:"thumbnail"`
 }
 
 type ItemDescription struct {
@@ -88,4 +91,8 @@ type ItemDescriptionConcurrent struct {
 	Item        *Item
 	Description *ItemDescription
 	Error       apierrors.ApiError
+}
+
+func (i *Item) HasActiveDeal() bool {
+	return i.Price < i.OriginalPrice && len(i.DealIds) > 0
 }
