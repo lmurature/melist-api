@@ -9,7 +9,7 @@ type User struct {
 }
 
 type MelistUser struct {
-	Id           int64  `json:"id"`
+	Id           int64  `json:"id,omitempty"`
 	FirstName    string `json:"first_name"`
 	LastName     string `json:"last_name"`
 	Nickname     string `json:"nickname"`

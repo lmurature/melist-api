@@ -4,13 +4,14 @@ import (
 	"errors"
 	"github.com/lmurature/melist-api/src/api/clients/database"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/users"
 	"github.com/sirupsen/logrus"
 )
 
 const (
 	insertShareConfig     = "INSERT INTO share_config(user_id, list_id, `type`) VALUES (?,?,?);"
 	getShareConfigsByUser = "SELECT s.user_id, s.list_id, s.`type` FROM share_config s WHERE s.user_id=?;"
-	getShareConfigsByList = "SELECT s.user_id, s.list_id, s.`type` FROM share_config s WHERE s.list_id=?;"
+	getShareConfigsByList = "SELECT s.user_id, s.list_id, s.`type`, u.first_name, u.last_name, u.email, u.nickname FROM share_config s INNER JOIN user u ON s.user_id=u.id WHERE s.list_id=?;"
 	updateShareConfigType = "UPDATE share_config SET `type`=? WHERE (user_id=? AND list_id=?);"
 	deleteShareConfig     = "DELETE FROM share_config s WHERE (s.user_id=? AND s.list_id=?);"
 )
@@ -101,10 +102,12 @@ func (dao *shareConfigDao) GetAllShareConfigsByList(listId int64) (ShareConfigs,
 
 	for rows.Next() {
 		var conf ShareConfig
-		if err := rows.Scan(&conf.UserId, &conf.ListId, &conf.ShareType); err != nil {
+		var userData users.MelistUser
+		if err := rows.Scan(&conf.UserId, &conf.ListId, &conf.ShareType, &userData.FirstName, &userData.LastName, &userData.Email, &userData.Nickname); err != nil {
 			logrus.Error("error when scan share config row into share config struct", err)
 			return nil, apierrors.NewInternalServerApiError("error when tying to get share configs from list", errors.New("database error"))
 		}
+		conf.UserData = &userData
 		result = append(result, conf)
 	}
 
@@ -115,7 +118,7 @@ func (dao *shareConfigDao) GetAllShareConfigsByList(listId int64) (ShareConfigs,
 	return result, nil
 }
 
-func (dao *shareConfigDao) UpdateShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError){
+func (dao *shareConfigDao) UpdateShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError) {
 	stmt, err := database.DbClient.Prepare(updateShareConfigType)
 	if err != nil {
 		logrus.Error("error when trying to prepare update share config statement", err)

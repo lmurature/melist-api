@@ -9,10 +9,6 @@ import (
 	"strings"
 )
 
-const (
-	quantityOfStringsAfterSpliting = 2
-)
-
 func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqToken := c.Request.Header.Get("Authorization")
@@ -27,7 +23,7 @@ func Authenticate() gin.HandlerFunc {
 
 		splitToken := strings.Split(reqToken, "Bearer ")
 
-		if len(splitToken) != quantityOfStringsAfterSpliting {
+		if len(splitToken) != 2 {
 			err := apierrors.NewBadRequestApiError("authorization token (Bearer) is needed to access this endpoint")
 			c.JSON(err.Status(), err)
 			return
