@@ -19,6 +19,7 @@ var (
 	authenticationRestClient = rest.RequestBuilder{
 		BaseURL:        http_utils.BaseUrlMeli,
 		Timeout:        5 * time.Second,
+		DisableCache:   true,
 		DisableTimeout: false,
 	}
 )
