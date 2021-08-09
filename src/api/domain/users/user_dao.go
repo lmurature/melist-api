@@ -137,5 +137,9 @@ func (dao *userDao) SearchUsers(query string) ([]MelistUser, apierrors.ApiError)
 		result = append(result, u)
 	}
 
+	if len(result) == 0 {
+		return nil, apierrors.NewNotFoundApiError("Users not found")
+	}
+
 	return result, nil
 }
