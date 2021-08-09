@@ -28,6 +28,7 @@ func mapUrls() {
 	router.GET("/api/lists/get/:list_id/shares", middlewares.Authenticate, lists_controller.GetListShareConfigs)
 	router.PUT("/api/lists/update/:list_id", middlewares.Authenticate, lists_controller.UpdateList)
 	router.PUT("/api/lists/access/:list_id", middlewares.Authenticate, lists_controller.GiveUsersAccessToList)
+	router.DELETE("/api/lists/access/:list_id", middlewares.Authenticate, lists_controller.RevokeUserAccessToList)
 	router.PUT("/api/lists/favorite/:list_id", middlewares.Authenticate, lists_controller.SetListFavorite)
 	router.DELETE("/api/lists/favorite/:list_id", middlewares.Authenticate, lists_controller.UnsetListFavorite)
 	router.GET("/api/lists/search", middlewares.Authenticate, lists_controller.SearchPublicLists)

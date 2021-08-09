@@ -111,6 +111,34 @@ func GiveUsersAccessToList(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+func RevokeUserAccessToList(c *gin.Context) {
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	userToRevoke, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("user id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	result, resErr := lists_service.ListsService.RevokeAccessToUser(listId, callerId, userToRevoke)
+	if resErr != nil {
+		c.JSON(resErr.Status(), resErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 func SearchPublicLists(c *gin.Context) {
 	userLists, err := lists_service.ListsService.SearchPublicLists()
 	if err != nil {

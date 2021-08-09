@@ -34,6 +34,7 @@ type listsServiceInterface interface {
 	MakeFavoriteList(listId int64, userId int64) apierrors.ApiError
 	RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError
 	GetUserPermissions(listId int64, callerId int64) (*share.ShareConfig, apierrors.ApiError)
+	RevokeAccessToUser(listId int64, callerId int64, userId int64) (share.ShareConfigs, apierrors.ApiError)
 }
 
 var (
@@ -448,4 +449,37 @@ func (l listsService) GetUserPermissions(listId int64, callerId int64) (*share.S
 	} else {
 		return nil, apierrors.NewForbiddenApiError("you have no access to this list")
 	}
+}
+
+func (l listsService) RevokeAccessToUser(listId int64, callerId int64, userId int64) (share.ShareConfigs, apierrors.ApiError) {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := list.ValidateUpdatability(callerId); err != nil {
+		return nil, err
+	}
+
+	shareConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
+	if err != nil {
+		return nil, err
+	}
+
+	if !slice.ShareConfigUserExists(shareConfigs, userId) {
+		return nil, apierrors.NewBadRequestApiError("user does not have access to list")
+	}
+
+	var deletedIndex int
+	for i, conf := range shareConfigs {
+		if conf.UserId == userId {
+			deletedIndex = i
+			if err := share.ShareConfigDao.DeleteShareConfig(userId, listId); err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
+
+	return append(shareConfigs[:deletedIndex], shareConfigs[deletedIndex+1:]...), nil
 }
