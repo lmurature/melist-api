@@ -35,6 +35,7 @@ type listsServiceInterface interface {
 	RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError
 	GetUserPermissions(listId int64, callerId int64) (*share.ShareConfig, apierrors.ApiError)
 	RevokeAccessToUser(listId int64, callerId int64, userId int64) (share.ShareConfigs, apierrors.ApiError)
+	GetListNotifications(listId int64, callerId int64) ([]notifications.Notification, apierrors.ApiError)
 }
 
 var (
@@ -482,4 +483,24 @@ func (l listsService) RevokeAccessToUser(listId int64, callerId int64, userId in
 	}
 
 	return append(shareConfigs[:deletedIndex], shareConfigs[deletedIndex+1:]...), nil
+}
+
+func (l listsService) GetListNotifications(listId int64, callerId int64) ([]notifications.Notification, apierrors.ApiError) {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return nil, err
+	}
+
+	configs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return nil, err
+		}
+	}
+
+	if err := list.ValidateReadability(callerId, configs); err != nil {
+		return nil, err
+	}
+
+	return notifications.NotificationsDao.GetListNotifications(listId)
 }

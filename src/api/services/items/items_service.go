@@ -11,6 +11,7 @@ type itemsService struct{}
 type itemsServiceInterface interface {
 	SearchItems(query string) (*items.ItemSearchResponse, apierrors.ApiError)
 	GetItem(itemId string) (*items.Item, apierrors.ApiError)
+	GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError)
 }
 
 var (
@@ -54,11 +55,10 @@ func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) 
 		}
 	}(itemId, input)
 
+	var err apierrors.ApiError = nil
 	for i := 0; i < 2; i++ {
-		result := <- input
-		if result.Error != nil {
-			return nil, result.Error
-		}
+		result := <-input
+		err = result.Error
 
 		if result.Item != nil {
 			meliItem = result.Item
@@ -67,6 +67,16 @@ func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) 
 		}
 	}
 
-	meliItem.Description = desc.PlainText
+	if err != nil {
+		return nil, err
+	}
+
+	if desc != nil && meliItem != nil {
+		meliItem.Description = desc.PlainText
+	}
 	return meliItem, nil
+}
+
+func (s *itemsService) GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError) {
+	return items.ItemHistoryDao.GetItemHistory(itemId)
 }

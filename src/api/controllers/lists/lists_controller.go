@@ -396,3 +396,24 @@ func GetMyPermissions(c *gin.Context) {
 
 	c.JSON(http.StatusOK, permissions)
 }
+
+func GetListNotifications(c *gin.Context) {
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	result, resErr := lists_service.ListsService.GetListNotifications(listId, callerId)
+	if resErr != nil {
+		c.JSON(resErr.Status(), resErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

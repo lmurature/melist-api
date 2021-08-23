@@ -21,6 +21,7 @@ func mapUrls() {
 
 	router.GET("/api/items/search", middlewares.Authenticate, items_controller.SearchItems)
 	router.GET("/api/items/:item_id", middlewares.Authenticate, items_controller.GetItem)
+	router.GET("/api/items/:item_id/history", middlewares.Authenticate, items_controller.GetItemHistory)
 
 	// List management
 	router.POST("/api/lists/create", middlewares.Authenticate, lists_controller.CreateList)
@@ -36,6 +37,7 @@ func mapUrls() {
 	router.GET("/api/lists/get/all_shared", middlewares.Authenticate, lists_controller.GetMySharedLists)
 	router.GET("/api/lists/get/favorites", middlewares.Authenticate, lists_controller.GetFavoriteLists)
 	router.GET("/api/lists/get/:list_id/permissions", middlewares.Authenticate, lists_controller.GetMyPermissions)
+	router.GET("/api/lists/get/:list_id/notifications", middlewares.Authenticate, lists_controller.GetListNotifications)
 
 	// List items management
 	router.POST("/api/lists/:list_id/items/:item_id", middlewares.Authenticate, lists_controller.AddItemsToList)

@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	insertNotification = "INSERT INTO list_notifications(list_id,message,timestamp,seen,permalink) VALUES(?,?,?,?,?);"
+	insertNotification   = "INSERT INTO list_notifications(list_id,message,timestamp,seen,permalink) VALUES(?,?,?,?,?);"
+	getListNotifications = "SELECT id,list_id,message,timestamp,seen,permalink FROM list_notifications WHERE list_id=?;"
 )
 
 var (
@@ -20,7 +21,7 @@ type notificationsDaoInterface interface {
 	GetListNotifications(listId int64) ([]Notification, apierrors.ApiError)
 }
 
-type notificationsDao struct {}
+type notificationsDao struct{}
 
 func init() {
 	NotificationsDao = &notificationsDao{}
@@ -48,7 +49,29 @@ func (n *notificationsDao) SaveNotification(notification Notification) (*Notific
 }
 
 func (n *notificationsDao) GetListNotifications(listId int64) ([]Notification, apierrors.ApiError) {
-	panic("implement me")
+	stmt, err := database.DbClient.Prepare(getListNotifications)
+	if err != nil {
+		logrus.Error("error when trying to prepare get notification statement", err)
+		return nil, apierrors.NewInternalServerApiError("error when trying to get notifications", error_utils.GetDatabaseGenericError())
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(listId)
+	if err != nil {
+		logrus.Error("error while getting notifications", err)
+		return nil, apierrors.NewInternalServerApiError("error getting notifications", error_utils.GetDatabaseGenericError())
+	}
+	defer rows.Close()
+
+	result := make([]Notification, 0)
+	for rows.Next() {
+		var n Notification
+		if err := rows.Scan(&n.Id, &n.ListId, &n.Message, &n.Timestamp, &n.Seen, &n.Permalink); err != nil {
+			logrus.Error("error scaning notification into notification struct", err)
+			return nil, apierrors.NewInternalServerApiError("error getting notifications", error_utils.GetDatabaseGenericError())
+		}
+		result = append(result, n)
+	}
+
+	return result, nil
 }
-
-
