@@ -9,7 +9,7 @@ import (
 
 const (
 	insertItemHistory  = "INSERT INTO item_history(item_id,price,quantity,status,has_deal,date_fetched) VALUES(?,?,?,?,?,?);"
-	getItemHistory     = "SELECT id,item_id,price,quantity,status,has_deal,date_fetched FROM item_history WHERE item_id=? ORDER BY date_fetched DESC;"
+	getItemHistory     = "SELECT id,item_id,price,quantity,status,has_deal,date_fetched FROM item_history WHERE item_id=? ORDER BY date_fetched ASC;"
 	getLastItemHistory = "SELECT id,item_id,price,quantity,status,has_deal,date_fetched FROM item_history WHERE item_id=? ORDER BY date_fetched DESC LIMIT 1;"
 )
 
