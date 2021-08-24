@@ -54,7 +54,7 @@ func persistItemHistory() {
 		result := <-input
 		if result.Error != nil {
 			logrus.Error("error executing job while getting item from Mercado Libre's API")
-			return
+			continue
 		}
 
 		meliItems = append(meliItems, *result.Item)
