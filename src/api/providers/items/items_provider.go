@@ -15,12 +15,20 @@ const (
 	uriSearchItems        = "/sites/MLA/search?q=%s"
 	uriGetItem            = "/items/%s"
 	uriGetItemDescription = "/items/%s/description"
+	uriGetItemReviews     = "/reviews/item/%s"
 )
 
 var (
 	itemsRestClient = rest.RequestBuilder{
 		BaseURL:        http_utils.BaseUrlMeli,
 		Timeout:        5 * time.Second,
+		DisableTimeout: false,
+	}
+
+	reviewsRestClient = rest.RequestBuilder{
+		BaseURL:        http_utils.BaseUrlMeli,
+		Timeout:        5 * time.Second,
+		DisableCache:   true,
 		DisableTimeout: false,
 	}
 )
@@ -104,4 +112,32 @@ func GetItemDescription(itemId string) (*items.ItemDescription, apierrors.ApiErr
 	}
 
 	return &description, nil
+}
+
+func GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError) {
+	uri := fmt.Sprintf(uriGetItemReviews, itemId)
+	response := reviewsRestClient.Get(uri)
+
+	if response == nil || response.Response == nil {
+		err := errors.New("invalid restclient response")
+		msg := fmt.Sprintf("invalid restclient response getting item %s reviews", itemId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	if response.StatusCode > 299 {
+		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
+		if err != nil {
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal apierror item review response", err)
+		}
+		return nil, apiErr
+	}
+
+	var result items.ItemReviewsResponse
+	if err := json.Unmarshal(response.Bytes(), &result); err != nil {
+		msg := fmt.Sprintf("error trying to unmarshal response into item review %s structure", itemId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	fmt.Println(result)
+	return &result, nil
 }

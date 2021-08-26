@@ -32,7 +32,7 @@ func (e apiErr) Code() string {
 }
 
 func (e apiErr) Error() string {
-	return fmt.Sprintf("Message: %s;Error Code: %s;Status: %d;Cause: %v", e.ErrorMessage, e.ErrorCode, e.ErrorStatus, e.ErrorCause)
+	return fmt.Sprintf("Message: %s;ItemError Code: %s;Status: %d;Cause: %v", e.ErrorMessage, e.ErrorCode, e.ErrorStatus, e.ErrorCause)
 }
 
 func (e apiErr) Status() int {

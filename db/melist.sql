@@ -74,6 +74,7 @@ CREATE TABLE `item_history` (
   `status` varchar(100) DEFAULT NULL,
   `has_deal` tinyint(1) DEFAULT NULL,
   `date_fetched` date NOT NULL,
+  `reviews_quantity` int NULL;
   PRIMARY KEY (`id`),
   KEY `item_history_FK` (`item_id`),
   CONSTRAINT `item_history_FK` FOREIGN KEY (`item_id`) REFERENCES `item` (`item_id`)

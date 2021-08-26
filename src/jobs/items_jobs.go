@@ -41,10 +41,14 @@ func persistItemHistory() {
 
 	for i := range itemIds {
 		go func(id string, index int, output chan items.ItemConcurrent) {
-			item, err := items_service.ItemsService.GetItem(id)
+			item, itemErr := items_service.ItemsService.GetItem(id)
+			reviews, revErr := items_service.ItemsService.GetItemReviews(id)
+			if revErr == nil && item != nil {
+				item.ReviewsQuantity = reviews.Paging.Total
+			}
 			output <- items.ItemConcurrent{
 				Item:      item,
-				Error:     err,
+				ItemError: itemErr,
 				ListIndex: index,
 			}
 		}(itemIds[i], i, input)
@@ -52,7 +56,7 @@ func persistItemHistory() {
 
 	for i := 0; i < len(itemIds); i++ {
 		result := <-input
-		if result.Error != nil {
+		if result.ItemError != nil {
 			logrus.Error("error executing job while getting item from Mercado Libre's API")
 			continue
 		}
@@ -65,12 +69,13 @@ func persistItemHistory() {
 
 	for _, item := range meliItems {
 		hist := items.ItemHistory{
-			ItemId:      item.Id,
-			Price:       item.Price,
-			Quantity:    item.AvailableQuantity,
-			Status:      item.Status,
-			HasDeal:     item.HasActiveDeal(),
-			DateFetched: date_utils.GetNowDateFormatted(),
+			ItemId:          item.Id,
+			Price:           item.Price,
+			Quantity:        item.AvailableQuantity,
+			Status:          item.Status,
+			HasDeal:         item.HasActiveDeal(),
+			ReviewsQuantity: item.ReviewsQuantity,
+			DateFetched:     date_utils.GetNowDateFormatted(),
 		}
 
 		result, err := items.ItemHistoryDao.InsertItemHistory(hist)

@@ -12,6 +12,7 @@ type itemsServiceInterface interface {
 	SearchItems(query string) (*items.ItemSearchResponse, apierrors.ApiError)
 	GetItem(itemId string) (*items.Item, apierrors.ApiError)
 	GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError)
+	GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError)
 }
 
 var (
@@ -79,4 +80,8 @@ func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) 
 
 func (s *itemsService) GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError) {
 	return items.ItemHistoryDao.GetItemHistory(itemId)
+}
+
+func (s *itemsService) GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError) {
+	return items_provider.GetItemReviews(itemId)
 }

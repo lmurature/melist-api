@@ -296,7 +296,7 @@ func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) 
 				item, err := items_service.ItemsService.GetItem(id)
 				output <- items.ItemConcurrent{
 					Item:      item,
-					Error:     err,
+					ItemError: err,
 					ListIndex: index,
 				}
 			}(itemListCollection[i].ItemId, i, input)
@@ -304,8 +304,8 @@ func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) 
 
 		for i := 0; i < len(itemListCollection); i++ {
 			result := <-input
-			if result.Error != nil {
-				return nil, result.Error
+			if result.ItemError != nil {
+				return nil, result.ItemError
 			}
 
 			itemListCollection[result.ListIndex].MeliItem = result.Item

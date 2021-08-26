@@ -23,6 +23,7 @@ type Item struct {
 	Permalink         string          `json:"permalink,omitempty"`
 	DealIds           []string        `json:"deal_ids"`
 	Thumbnail         string          `json:"thumbnail"`
+	ReviewsQuantity   int64           `json:"-"`
 }
 
 type ItemDescription struct {
@@ -83,7 +84,9 @@ type Sort struct {
 
 type ItemConcurrent struct {
 	Item      *Item
-	Error     apierrors.ApiError
+	ItemError apierrors.ApiError
+	RevError  apierrors.ApiError
+	Reviews   *ItemReviewsResponse
 	ListIndex int
 }
 

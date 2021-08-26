@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	insertItemHistory  = "INSERT INTO item_history(item_id,price,quantity,status,has_deal,date_fetched) VALUES(?,?,?,?,?,?);"
-	getItemHistory     = "SELECT id,item_id,price,quantity,status,has_deal,date_fetched FROM item_history WHERE item_id=? ORDER BY date_fetched ASC;"
-	getLastItemHistory = "SELECT id,item_id,price,quantity,status,has_deal,date_fetched FROM item_history WHERE item_id=? ORDER BY date_fetched DESC LIMIT 1;"
+	insertItemHistory  = "INSERT INTO item_history(item_id,price,quantity,status,has_deal,date_fetched,reviews_quantity) VALUES(?,?,?,?,?,?,?);"
+	getItemHistory     = "SELECT id,item_id,price,quantity,status,has_deal,date_fetched,reviews_quantity FROM item_history WHERE item_id=? ORDER BY date_fetched ASC;"
+	getLastItemHistory = "SELECT id,item_id,price,quantity,status,has_deal,date_fetched,reviews_quantity FROM item_history WHERE item_id=? ORDER BY date_fetched DESC LIMIT 1;"
 )
 
 var (
@@ -37,7 +37,7 @@ func (dao *itemHistoryDao) InsertItemHistory(history ItemHistory) (*ItemHistory,
 	}
 	defer stmt.Close()
 
-	execResult, execErr := stmt.Exec(history.ItemId, history.Price, history.Quantity, history.Status, history.HasDeal, history.DateFetched)
+	execResult, execErr := stmt.Exec(history.ItemId, history.Price, history.Quantity, history.Status, history.HasDeal, history.DateFetched, history.ReviewsQuantity)
 	if execErr != nil {
 		logrus.Error("error when trying to save item history", execErr)
 		return nil, apierrors.NewInternalServerApiError("error when trying to save item history", error_utils.GetDatabaseGenericError())
@@ -70,7 +70,7 @@ func (dao *itemHistoryDao) GetLastItemHistory(itemId string) (*ItemHistory, apie
 		var history ItemHistory
 		if err := rows.Scan(&history.Id, &history.ItemId, &history.Price,
 			&history.Quantity, &history.Status, &history.HasDeal,
-			&history.DateFetched); err != nil {
+			&history.DateFetched, &history.ReviewsQuantity); err != nil {
 			logrus.Error("error scaning row item history", err)
 			return nil, apierrors.NewInternalServerApiError("error scanning row item history", error_utils.GetDatabaseGenericError())
 		}
@@ -104,7 +104,7 @@ func (dao *itemHistoryDao) GetItemHistory(itemId string) ([]ItemHistory, apierro
 		var history ItemHistory
 		if err := rows.Scan(&history.Id, &history.ItemId, &history.Price,
 			&history.Quantity, &history.Status, &history.HasDeal,
-			&history.DateFetched); err != nil {
+			&history.DateFetched, &history.ReviewsQuantity); err != nil {
 			logrus.Error("error scaning row item history", err)
 			return nil, apierrors.NewInternalServerApiError("error scanning row item history", error_utils.GetDatabaseGenericError())
 		}
