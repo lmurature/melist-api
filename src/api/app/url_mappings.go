@@ -45,4 +45,5 @@ func mapUrls() {
 	router.GET("/api/lists/:list_id/items", middlewares.Authenticate, lists_controller.GetItems)
 	router.DELETE("/api/lists/:list_id/items/:item_id", middlewares.Authenticate, lists_controller.DeleteItem)
 	router.PUT("/api/lists/:list_id/check/:item_id", middlewares.Authenticate, lists_controller.CheckItem)
+	router.PUT("/api/lists/:list_id/uncheck/:item_id", middlewares.Authenticate, lists_controller.UncheckItem)
 }

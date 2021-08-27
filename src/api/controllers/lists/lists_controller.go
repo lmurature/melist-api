@@ -284,13 +284,13 @@ func DeleteItem(c *gin.Context) {
 	userId, _ := c.Get("user_id")
 	callerId := userId.(int64)
 
-	addErr := lists_service.ListsService.DeleteItemFromList(itemId, listId, callerId)
+	result, addErr := lists_service.ListsService.DeleteItemFromList(itemId, listId, callerId)
 	if addErr != nil {
 		c.JSON(addErr.Status(), addErr)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+	c.JSON(http.StatusOK, result)
 }
 
 func CheckItem(c *gin.Context) {
@@ -312,13 +312,41 @@ func CheckItem(c *gin.Context) {
 	userId, _ := c.Get("user_id")
 	callerId := userId.(int64)
 
-	addErr := lists_service.ListsService.CheckItem(itemId, listId, callerId)
+	result, addErr := lists_service.ListsService.CheckItem(itemId, listId, callerId)
 	if addErr != nil {
 		c.JSON(addErr.Status(), addErr)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "checked"})
+	c.JSON(http.StatusOK, result)
+}
+
+func UncheckItem(c *gin.Context) {
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	itemId := c.Param("item_id")
+	if itemId == "" {
+		br := apierrors.NewBadRequestApiError("item id is mandatory")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	result, addErr := lists_service.ListsService.UncheckItem(itemId, listId, callerId)
+	if addErr != nil {
+		c.JSON(addErr.Status(), addErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func GetFavoriteLists(c *gin.Context) {

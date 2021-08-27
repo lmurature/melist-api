@@ -28,8 +28,9 @@ type listsServiceInterface interface {
 	GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError)
 	AddItemToList(itemId string, variationId int64, listId int64, callerId int64) apierrors.ApiError
 	GetItemsFromList(listId int64, callerId int64, info bool) (items.ItemListCollection, apierrors.ApiError)
-	DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError
-	CheckItem(itemId string, listId int64, callerId int64) apierrors.ApiError
+	DeleteItemFromList(itemId string, listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError)
+	CheckItem(itemId string, listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError)
+	UncheckItem(itemId string, listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError)
 	GetUserFavoriteLists(userId int64) (lists.Lists, apierrors.ApiError)
 	MakeFavoriteList(listId int64, userId int64) apierrors.ApiError
 	RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError
@@ -315,50 +316,55 @@ func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) 
 	return itemListCollection, nil
 }
 
-func (l listsService) DeleteItemFromList(itemId string, listId int64, callerId int64) apierrors.ApiError {
+func (l listsService) DeleteItemFromList(itemId string, listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError) {
 	list, err := lists.ListDao.GetList(listId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := list.ValidateAddItems(callerId, actualConfigs); err != nil {
-		return err
+		return nil, err
 	}
 
-	return items.ItemListDao.DeleteItemFromList(itemId, listId)
+	err = items.ItemListDao.DeleteItemFromList(itemId, listId)
+	if err != nil {
+		return nil, err
+	}
+
+	return l.GetItemsFromList(listId, callerId, true)
 }
 
-func (l listsService) CheckItem(itemId string, listId int64, callerId int64) apierrors.ApiError {
+func (l listsService) CheckItem(itemId string, listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError) {
 	list, err := lists.ListDao.GetList(listId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
 	if err != nil {
 		if err.Status() != http.StatusNotFound {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := list.ValidateCheckItems(callerId, actualConfigs); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := items.ItemListDao.UpdateItemStatus(itemId, listId, items.StatusChecked); err != nil {
-		return err
+		return nil, err
 	}
 
 	userData, err := users_service.UsersService.GetMeliUser(callerId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	result, err := notifications.NotificationsDao.SaveNotification(*notifications.NewCheckedItemNotification(listId, itemId, userData.Nickname))
@@ -366,7 +372,41 @@ func (l listsService) CheckItem(itemId string, listId int64, callerId int64) api
 		logrus.Info(fmt.Sprintf("successfully notificated checked item %s on list %d (%v)", itemId, listId, result))
 	}
 
-	return nil
+	return l.GetItemsFromList(listId, callerId, true)
+}
+
+func (l listsService) UncheckItem(itemId string, listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError) {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return nil, err
+	}
+
+	actualConfigs, err := share.ShareConfigDao.GetAllShareConfigsByList(listId)
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return nil, err
+		}
+	}
+
+	if err := list.ValidateCheckItems(callerId, actualConfigs); err != nil {
+		return nil, err
+	}
+
+	if err := items.ItemListDao.UpdateItemStatus(itemId, listId, items.StatusNotChecked); err != nil {
+		return nil, err
+	}
+
+	userData, err := users_service.UsersService.GetMeliUser(callerId)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := notifications.NotificationsDao.SaveNotification(*notifications.NewUncheckedItemNotification(listId, itemId, userData.Nickname))
+	if err == nil {
+		logrus.Info(fmt.Sprintf("successfully notificated unchecked item %s on list %d (%v)", itemId, listId, result))
+	}
+
+	return l.GetItemsFromList(listId, callerId, true)
 }
 
 func (l listsService) GetUserFavoriteLists(userId int64) (lists.Lists, apierrors.ApiError) {

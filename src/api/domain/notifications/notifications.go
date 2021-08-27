@@ -70,6 +70,15 @@ func NewCheckedItemNotification(listId int64, itemId string, checkerUser string)
 	}
 }
 
+func NewUncheckedItemNotification(listId int64, itemId string, checkerUser string) *Notification {
+	return &Notification{
+		ListId:    listId,
+		Message:   fmt.Sprintf("El producto %s fue marcado como no comprado por %s", itemId, checkerUser),
+		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
+	}
+}
+
 func NewAddedItemToListNotification(listId int64, itemId string, adderUser string) *Notification {
 	return &Notification{
 		ListId:    listId,
