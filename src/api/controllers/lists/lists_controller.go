@@ -445,3 +445,31 @@ func GetListNotifications(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+func GetListItemStatus(c *gin.Context) {
+	listParam := c.Param("list_id")
+	listId, err := strconv.ParseInt(listParam, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	itemId := c.Param("item_id")
+	if itemId == "" {
+		br := apierrors.NewBadRequestApiError("item id is mandatory")
+		c.JSON(br.Status(), br)
+		return
+	}
+
+	userId, _ := c.Get("user_id")
+	callerId := userId.(int64)
+
+	result, addErr := lists_service.ListsService.GetListItemStatus(itemId, listId, callerId)
+	if addErr != nil {
+		c.JSON(addErr.Status(), addErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

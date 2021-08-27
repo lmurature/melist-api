@@ -37,6 +37,7 @@ type listsServiceInterface interface {
 	GetUserPermissions(listId int64, callerId int64) (*share.ShareConfig, apierrors.ApiError)
 	RevokeAccessToUser(listId int64, callerId int64, userId int64) (share.ShareConfigs, apierrors.ApiError)
 	GetListNotifications(listId int64, callerId int64) ([]notifications.Notification, apierrors.ApiError)
+	GetListItemStatus(itemId string, listId int64, callerId int64) (*items.ItemListDto, apierrors.ApiError)
 }
 
 var (
@@ -543,4 +544,19 @@ func (l listsService) GetListNotifications(listId int64, callerId int64) ([]noti
 	}
 
 	return notifications.NotificationsDao.GetListNotifications(listId)
+}
+
+func (l listsService) GetListItemStatus(itemId string, listId int64, callerId int64) (*items.ItemListDto, apierrors.ApiError) {
+	listItems, err := l.GetItemsFromList(listId, callerId, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, li := range listItems {
+		if li.ItemId == itemId {
+			return &li, nil
+		}
+	}
+
+	return nil, apierrors.NewNotFoundApiError(fmt.Sprintf("item %s not found in list %d", itemId, listId))
 }
