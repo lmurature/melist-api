@@ -30,6 +30,7 @@ func init() {
 func StartApp() {
 	mapUrls()
 
+	jobs.ItemsJobs.Run()
 	c := clockwerk.New()
 	c.Every(5 * time.Hour).Do(jobs.ItemsJobs)
 	c.Start()
