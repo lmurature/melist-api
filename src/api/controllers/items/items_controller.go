@@ -35,7 +35,7 @@ func GetItem(c *gin.Context) {
 		return
 	}
 
-	item, err := items_service.ItemsService.GetItem(itemId)
+	item, err := items_service.ItemsService.GetItemWithDescription(itemId)
 	if err != nil {
 		c.JSON(err.Status(), err)
 		return
@@ -70,6 +70,23 @@ func GetItemReviews(c *gin.Context) {
 	}
 
 	result, err := items_service.ItemsService.GetItemReviews(itemId)
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func GetCategoryTrends(c *gin.Context) {
+	categoryId := c.Param("category_id")
+	if categoryId == "" {
+		err := apierrors.NewBadRequestApiError("'category_id' can't be empty")
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	result, err := items_service.ItemsService.GetCategoryTrends(categoryId)
 	if err != nil {
 		c.JSON(err.Status(), err)
 		return

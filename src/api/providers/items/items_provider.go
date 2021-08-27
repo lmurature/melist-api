@@ -16,6 +16,7 @@ const (
 	uriGetItem            = "/items/%s"
 	uriGetItemDescription = "/items/%s/description"
 	uriGetItemReviews     = "/reviews/item/%s"
+	uriGetCategoryTrends  = "/trends/MLA/%s"
 )
 
 var (
@@ -135,6 +136,33 @@ func GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiErr
 	var result items.ItemReviewsResponse
 	if err := json.Unmarshal(response.Bytes(), &result); err != nil {
 		msg := fmt.Sprintf("error trying to unmarshal response into item review %s structure", itemId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	return &result, nil
+}
+
+func GetCategoryTrends(categoryId string) (*items.CategoryTrends, apierrors.ApiError) {
+	uri := fmt.Sprintf(uriGetCategoryTrends, categoryId)
+	response := itemsRestClient.Get(uri)
+
+	if response == nil || response.Response == nil {
+		err := errors.New("invalid restclient response")
+		msg := fmt.Sprintf("invalid restclient response getting category %s trends", categoryId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	if response.StatusCode > 299 {
+		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
+		if err != nil {
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal apierror category trends response", err)
+		}
+		return nil, apiErr
+	}
+
+	var result items.CategoryTrends
+	if err := json.Unmarshal(response.Bytes(), &result); err != nil {
+		msg := fmt.Sprintf("error trying to unmarshal response into category %s trends structure", categoryId)
 		return nil, apierrors.NewInternalServerApiError(msg, err)
 	}
 

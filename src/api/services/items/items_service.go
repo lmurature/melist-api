@@ -12,9 +12,11 @@ type itemsService struct{}
 
 type itemsServiceInterface interface {
 	SearchItems(query string) (*items.ItemSearchResponse, apierrors.ApiError)
-	GetItem(itemId string) (*items.Item, apierrors.ApiError)
+	GetItemWithDescription(itemId string) (*items.Item, apierrors.ApiError)
 	GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError)
 	GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError)
+	GetCategoryTrends(categoryId string) (*items.CategoryTrends, apierrors.ApiError)
+	GetItem(itemId string) (*items.Item, apierrors.ApiError)
 }
 
 var (
@@ -34,7 +36,7 @@ func (s *itemsService) SearchItems(query string) (*items.ItemSearchResponse, api
 	return result, nil
 }
 
-func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) {
+func (s *itemsService) GetItemWithDescription(itemId string) (*items.Item, apierrors.ApiError) {
 	var meliItem *items.Item
 	var desc *items.ItemDescription
 	input := make(chan items.ItemDescriptionConcurrent, 2)
@@ -80,6 +82,10 @@ func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) 
 	return meliItem, nil
 }
 
+func (s *itemsService) GetItem(itemId string) (*items.Item, apierrors.ApiError) {
+	return items_provider.GetItemById(itemId)
+}
+
 func (s *itemsService) GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError) {
 	return items.ItemHistoryDao.GetItemHistory(itemId)
 }
@@ -92,4 +98,8 @@ func (s *itemsService) GetItemReviews(itemId string) (*items.ItemReviewsResponse
 	}
 
 	return result, nil
+}
+
+func (s *itemsService) GetCategoryTrends(categoryId string) (*items.CategoryTrends, apierrors.ApiError) {
+	return items_provider.GetCategoryTrends(categoryId)
 }

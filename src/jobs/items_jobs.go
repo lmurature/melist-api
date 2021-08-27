@@ -34,39 +34,25 @@ func persistItemHistory() {
 		logrus.Error("error executing job while getting all items from db", err)
 		return
 	}
+
 	// get items data from meli api
 	meliItems := make([]items.Item, 0)
-	input := make(chan items.ItemConcurrent, len(itemIds))
-	defer close(input)
-
-	for i := range itemIds {
-		go func(id string, index int, output chan items.ItemConcurrent) {
-			item, itemErr := items_service.ItemsService.GetItem(id)
-			reviews, revErr := items_service.ItemsService.GetItemReviews(id)
-			if revErr == nil && item != nil {
-				item.ReviewsQuantity = reviews.Paging.Total
-			}
-			output <- items.ItemConcurrent{
-				Item:      item,
-				ItemError: itemErr,
-				ListIndex: index,
-			}
-		}(itemIds[i], i, input)
-	}
-
-	for i := 0; i < len(itemIds); i++ {
-		result := <-input
-		if result.ItemError != nil {
-			logrus.Error("error executing job while getting item from Mercado Libre's API")
+	for _, id := range itemIds {
+		item, itemErr := items_service.ItemsService.GetItem(id)
+		if itemErr != nil {
 			continue
 		}
-
-		meliItems = append(meliItems, *result.Item)
+		reviews, revErr := items_service.ItemsService.GetItemReviews(id)
+		if revErr != nil {
+			continue
+		}
+		item.ReviewsQuantity = reviews.Paging.Total
+		meliItems = append(meliItems, *item)
 	}
 
 	logrus.Info(fmt.Sprintf("about to save %d items data to item history table", len(meliItems)))
-	// save data into items history table
 
+	// save data into items history table
 	for _, item := range meliItems {
 		hist := items.ItemHistory{
 			ItemId:          item.Id,
@@ -78,10 +64,7 @@ func persistItemHistory() {
 			DateFetched:     date_utils.GetNowDateFormatted(),
 		}
 
-		result, err := items.ItemHistoryDao.InsertItemHistory(hist)
-		if err == nil {
-			logrus.Info(fmt.Sprintf("successfully saved item history %v", result))
-		}
+		_, _ = items.ItemHistoryDao.InsertItemHistory(hist)
 	}
 }
 

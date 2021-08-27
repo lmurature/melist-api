@@ -294,7 +294,7 @@ func (l listsService) GetItemsFromList(listId int64, callerId int64, info bool) 
 
 		for i := range itemListCollection {
 			go func(id string, index int, output chan items.ItemConcurrent) {
-				item, err := items_service.ItemsService.GetItem(id)
+				item, err := items_service.ItemsService.GetItemWithDescription(id)
 				output <- items.ItemConcurrent{
 					Item:      item,
 					ItemError: err,
