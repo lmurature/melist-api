@@ -22,6 +22,7 @@ func mapUrls() {
 	router.GET("/api/items/search", middlewares.Authenticate, items_controller.SearchItems)
 	router.GET("/api/items/:item_id", middlewares.Authenticate, items_controller.GetItem)
 	router.GET("/api/items/:item_id/history", middlewares.Authenticate, items_controller.GetItemHistory)
+	router.GET("/api/items/:item_id/reviews", middlewares.Authenticate, items_controller.GetItemReviews)
 
 	// List management
 	router.POST("/api/lists/create", middlewares.Authenticate, lists_controller.CreateList)

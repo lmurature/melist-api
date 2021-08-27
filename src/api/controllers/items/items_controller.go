@@ -60,3 +60,20 @@ func GetItemHistory(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+func GetItemReviews(c *gin.Context) {
+	itemId := c.Param("item_id")
+	if itemId == "" {
+		err := apierrors.NewBadRequestApiError("'item_id' can't be empty")
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	result, err := items_service.ItemsService.GetItemReviews(itemId)
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

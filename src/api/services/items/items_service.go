@@ -1,9 +1,11 @@
 package items_service
 
 import (
+	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/lmurature/melist-api/src/api/domain/items"
 	items_provider "github.com/lmurature/melist-api/src/api/providers/items"
+	"github.com/sirupsen/logrus"
 )
 
 type itemsService struct{}
@@ -83,5 +85,11 @@ func (s *itemsService) GetItemHistory(itemId string) ([]items.ItemHistory, apier
 }
 
 func (s *itemsService) GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError) {
-	return items_provider.GetItemReviews(itemId)
+	result, err := items_provider.GetItemReviews(itemId)
+	if err != nil {
+		logrus.Error(fmt.Sprintf("error while getting reviews for item %s", itemId), err)
+		return nil, err
+	}
+
+	return result, nil
 }

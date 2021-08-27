@@ -138,6 +138,5 @@ func GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiErr
 		return nil, apierrors.NewInternalServerApiError(msg, err)
 	}
 
-	fmt.Println(result)
 	return &result, nil
 }

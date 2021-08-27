@@ -31,7 +31,7 @@ func StartApp() {
 	mapUrls()
 
 	c := clockwerk.New()
-	c.Every(15 * time.Second).Do(jobs.ItemsJobs)
+	c.Every(1 * time.Hour).Do(jobs.ItemsJobs)
 	c.Start()
 
 	router.Run(config.ApiPort)

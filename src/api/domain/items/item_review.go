@@ -7,7 +7,7 @@ type ItemReviewsResponse struct {
 }
 
 type Review struct {
-	ReviewId     string `json:"id"`
+	ReviewId     int64  `json:"id"`
 	DateCreated  string `json:"date_created"`
 	Title        string `json:"title"`
 	Content      string `json:"content"`
