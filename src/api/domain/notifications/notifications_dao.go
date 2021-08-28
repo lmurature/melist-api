@@ -9,7 +9,7 @@ import (
 
 const (
 	insertNotification   = "INSERT INTO list_notifications(list_id,message,timestamp,seen,permalink) VALUES(?,?,?,?,?);"
-	getListNotifications = "SELECT id,list_id,message,timestamp,seen,permalink FROM list_notifications WHERE list_id=?;"
+	getListNotifications = "SELECT id,list_id,message,timestamp,seen,permalink FROM list_notifications WHERE list_id=? ORDER BY timestamp DESC;"
 )
 
 var (

@@ -25,6 +25,8 @@ func (i ItemsJobsStruct) Run() {
 
 	// items saved in lists history
 	persistItemHistory()
+
+	// purgate items that arent in any lists (deleted items) from db
 }
 
 func persistItemHistory() {
