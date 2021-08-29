@@ -69,7 +69,7 @@ func GetItemReviews(c *gin.Context) {
 		return
 	}
 
-	result, err := items_service.ItemsService.GetItemReviews(itemId)
+	result, err := items_service.ItemsService.GetItemReviews(itemId, c.Param("catalog_product_id"))
 	if err != nil {
 		c.JSON(err.Status(), err)
 		return

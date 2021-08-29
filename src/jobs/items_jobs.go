@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/items"
 	"github.com/lmurature/melist-api/src/api/domain/notifications"
 	items_service "github.com/lmurature/melist-api/src/api/services/items"
@@ -42,7 +43,7 @@ func persistNotifications() {
 			continue
 		}
 
-		logrus.Info("about to analyze and save history for %d items from list %d", len(listItems), list.Id)
+		logrus.Info(fmt.Sprintf("about to analyze and save history for %d items from list %d", len(listItems), list.Id))
 		for _, item := range listItems {
 			lastHistory, err := items.ItemHistoryDao.GetLastItemHistory(item.ItemId)
 			if err != nil && err.Status() != http.StatusNotFound {
@@ -50,7 +51,7 @@ func persistNotifications() {
 				continue
 			}
 
-			reviews, revErr := items_service.ItemsService.GetItemReviews(item.ItemId)
+			reviews, revErr := items_service.ItemsService.GetItemReviews(item.MeliItem.Id, item.MeliItem.CatalogProductId)
 			if revErr != nil {
 				continue
 			}

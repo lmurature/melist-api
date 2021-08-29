@@ -15,7 +15,7 @@ const (
 	uriSearchItems        = "/sites/MLA/search?q=%s"
 	uriGetItem            = "/items/%s"
 	uriGetItemDescription = "/items/%s/description"
-	uriGetItemReviews     = "/reviews/item/%s"
+	uriGetItemReviews     = "/reviews/item/%s?catalog_product_id=%s"
 	uriGetCategoryTrends  = "/trends/MLA/%s"
 )
 
@@ -115,8 +115,8 @@ func GetItemDescription(itemId string) (*items.ItemDescription, apierrors.ApiErr
 	return &description, nil
 }
 
-func GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError) {
-	uri := fmt.Sprintf(uriGetItemReviews, itemId)
+func GetItemReviews(itemId string, catalogProductId string) (*items.ItemReviewsResponse, apierrors.ApiError) {
+	uri := fmt.Sprintf(uriGetItemReviews, itemId, catalogProductId)
 	response := reviewsRestClient.Get(uri)
 
 	if response == nil || response.Response == nil {

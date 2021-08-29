@@ -14,7 +14,7 @@ type itemsServiceInterface interface {
 	SearchItems(query string) (*items.ItemSearchResponse, apierrors.ApiError)
 	GetItemWithDescription(itemId string) (*items.Item, apierrors.ApiError)
 	GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError)
-	GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError)
+	GetItemReviews(itemId string, catalogProductId string) (*items.ItemReviewsResponse, apierrors.ApiError)
 	GetCategoryTrends(categoryId string) (*items.CategoryTrends, apierrors.ApiError)
 	GetItem(itemId string) (*items.Item, apierrors.ApiError)
 }
@@ -90,8 +90,8 @@ func (s *itemsService) GetItemHistory(itemId string) ([]items.ItemHistory, apier
 	return items.ItemHistoryDao.GetItemHistory(itemId)
 }
 
-func (s *itemsService) GetItemReviews(itemId string) (*items.ItemReviewsResponse, apierrors.ApiError) {
-	result, err := items_provider.GetItemReviews(itemId)
+func (s *itemsService) GetItemReviews(itemId string, catalogProductId string) (*items.ItemReviewsResponse, apierrors.ApiError) {
+	result, err := items_provider.GetItemReviews(itemId, catalogProductId)
 	if err != nil {
 		logrus.Error(fmt.Sprintf("error while getting reviews for item %s", itemId), err)
 		return nil, err

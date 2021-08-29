@@ -23,6 +23,7 @@ type Item struct {
 	Permalink         string          `json:"permalink,omitempty"`
 	DealIds           []string        `json:"deal_ids"`
 	Thumbnail         string          `json:"thumbnail"`
+	CatalogProductId  string          `json:"catalog_product_id,omitempty"`
 	ReviewsQuantity   int64           `json:"-"`
 }
 
