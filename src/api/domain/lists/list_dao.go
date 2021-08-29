@@ -17,6 +17,7 @@ const (
 	getAllUserFavoriteLists = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l INNER JOIN user_favorite_list uf ON uf.list_id=l.id WHERE uf.user_id=?;"
 	insertUserFavoriteList  = "INSERT INTO user_favorite_list (user_id, list_id) VALUES(?,?);"
 	deleteUserFavoriteList  = "DELETE FROM user_favorite_list uf WHERE uf.list_id=? AND uf.user_id=?;"
+	getAllLists             = "SELECT l.id, l.owner_id, l.title, l.description, l.privacy, l.date_created FROM list l;"
 )
 
 var (
@@ -32,6 +33,7 @@ type listDaoInterface interface {
 	GetUserFavoriteLists(userId int64) (Lists, apierrors.ApiError)
 	SaveFavoriteList(listId int64, userId int64) apierrors.ApiError
 	RemoveFavoriteList(listId int64, userId int64) apierrors.ApiError
+	GetAllLists() (Lists, apierrors.ApiError)
 }
 
 type listDao struct{}
@@ -232,4 +234,37 @@ func (dao *listDao) RemoveFavoriteList(listId int64, userId int64) apierrors.Api
 	}
 
 	return nil
+}
+
+func (dao *listDao) GetAllLists() (Lists, apierrors.ApiError) {
+	stmt, err := database.DbClient.Prepare(getAllLists)
+	if err != nil {
+		logrus.Error("error when trying to prepare get all lists statement", err)
+		return nil, apierrors.NewInternalServerApiError("error when trying to get all lists", error_utils.GetDatabaseGenericError())
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		logrus.Error("error while getting all lists", err)
+		return nil, apierrors.NewInternalServerApiError("error getting all lists", error_utils.GetDatabaseGenericError())
+	}
+	defer rows.Close()
+
+	result := make([]List, 0)
+
+	for rows.Next() {
+		var list List
+		if err := rows.Scan(&list.Id, &list.OwnerId, &list.Title, &list.Description, &list.Privacy, &list.DateCreated); err != nil {
+			logrus.Error("error when scan list row into list struct", err)
+			return nil, apierrors.NewInternalServerApiError("error when tying to get all lists", error_utils.GetDatabaseGenericError())
+		}
+		result = append(result, list)
+	}
+
+	if len(result) == 0 {
+		return nil, apierrors.NewNotFoundApiError("no lists found")
+	}
+
+	return result, nil
 }

@@ -1,12 +1,14 @@
 package jobs
 
 import (
-	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/items"
+	"github.com/lmurature/melist-api/src/api/domain/notifications"
 	items_service "github.com/lmurature/melist-api/src/api/services/items"
+	lists_service "github.com/lmurature/melist-api/src/api/services/lists"
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
 	"github.com/onatm/clockwerk"
 	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 var (
@@ -20,59 +22,79 @@ func init() {
 }
 
 func (i ItemsJobsStruct) Run() {
-	// analyze lists and persist notifications
+	// analyze lists, persist history and notifications
 	persistNotifications()
-
-	// items saved in lists history
-	persistItemHistory()
-
-	// purgate items that arent in any lists (deleted items) from db
-}
-
-func persistItemHistory() {
-	// get all items from items table
-	itemIds, err := items.ItemDao.GetAllItems()
-	if err != nil {
-		logrus.Error("error executing job while getting all items from db", err)
-		return
-	}
-
-	// get items data from meli api
-	meliItems := make([]items.Item, 0)
-	for _, id := range itemIds {
-		item, itemErr := items_service.ItemsService.GetItem(id)
-		if itemErr != nil {
-			continue
-		}
-		reviews, revErr := items_service.ItemsService.GetItemReviews(id)
-		if revErr != nil {
-			continue
-		}
-		item.ReviewsQuantity = reviews.Paging.Total
-		meliItems = append(meliItems, *item)
-	}
-
-	logrus.Info(fmt.Sprintf("about to save %d items data to item history table", len(meliItems)))
-
-	// save data into items history table
-	for _, item := range meliItems {
-		hist := items.ItemHistory{
-			ItemId:          item.Id,
-			Price:           item.Price,
-			Quantity:        item.AvailableQuantity,
-			Status:          item.Status,
-			HasDeal:         item.HasActiveDeal(),
-			ReviewsQuantity: item.ReviewsQuantity,
-			DateFetched:     date_utils.GetNowDateFormatted(),
-		}
-
-		_, _ = items.ItemHistoryDao.InsertItemHistory(hist)
-	}
 }
 
 func persistNotifications() {
-	// TODO: ...
 	// get all lists
+	lists, err := lists_service.ListsService.GetAllLists()
+	if err != nil {
+		logrus.Error("error while getting lists", err)
+		return
+	}
 
-	// for each list, get all items, analyze current data and last history, generate notifications
+	// for each list, get all items, analyze current data and last history, generate notifications and save item history.
+	for _, list := range lists {
+		listItems, err := lists_service.ListsService.GetItemsFromList(list.Id, list.OwnerId, true)
+		if err != nil {
+			logrus.Error("error while getting list items")
+			continue
+		}
+
+		logrus.Info("about to analyze and save history for %d items from list %d", len(listItems), list.Id)
+		for _, item := range listItems {
+			lastHistory, err := items.ItemHistoryDao.GetLastItemHistory(item.ItemId)
+			if err != nil && err.Status() != http.StatusNotFound {
+				logrus.Error("error getting item last history", err)
+				continue
+			}
+
+			reviews, revErr := items_service.ItemsService.GetItemReviews(item.ItemId)
+			if revErr != nil {
+				continue
+			}
+
+			item.MeliItem.ReviewsQuantity = reviews.Paging.Total
+
+			// analyze
+			if lastHistory != nil {
+				if item.MeliItem.HasActiveDeal() && !lastHistory.HasDeal {
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealActivatedNotification(list.Id, item.ItemId))
+				} else if !item.MeliItem.HasActiveDeal() && lastHistory.HasDeal {
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealEndedNotification(list.Id, item.ItemId))
+				}
+
+				if item.MeliItem.Price != lastHistory.Price {
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewPriceChangeNotification(list.Id, item.ItemId, lastHistory.Price, item.MeliItem.Price))
+				}
+
+				if item.MeliItem.AvailableQuantity == 0 &&
+					item.MeliItem.Status == "paused" &&
+					lastHistory.Quantity > 0 {
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewEmptyStockNotification(list.Id, item.ItemId))
+				}
+
+				if item.MeliItem.AvailableQuantity <= 3 && lastHistory.Quantity > 3 {
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewNearEmptyStockNotification(list.Id, item.ItemId, item.MeliItem.AvailableQuantity))
+				}
+
+				if item.MeliItem.ReviewsQuantity > lastHistory.ReviewsQuantity {
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewReviewItemNotification(list.Id, item.ItemId))
+				}
+			}
+
+			hist := items.ItemHistory{
+				ItemId:          item.MeliItem.Id,
+				Price:           item.MeliItem.Price,
+				Quantity:        item.MeliItem.AvailableQuantity,
+				Status:          item.MeliItem.Status,
+				HasDeal:         item.MeliItem.HasActiveDeal(),
+				ReviewsQuantity: item.MeliItem.ReviewsQuantity,
+				DateFetched:     date_utils.GetNowDateFormatted(),
+			}
+
+			_, _ = items.ItemHistoryDao.InsertItemHistory(hist)
+		}
+	}
 }

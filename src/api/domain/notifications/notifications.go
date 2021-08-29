@@ -9,7 +9,7 @@ import (
 
 const (
 	listItemUrl = "/lists/%d/%s"
-	listUrl = "/lists/%d"
+	listUrl     = "/lists/%d"
 )
 
 type Notification struct {
@@ -58,6 +58,7 @@ func NewEmptyStockNotification(listId int64, itemId string) *Notification {
 		ListId:    listId,
 		Message:   fmt.Sprintf("El producto %s se quedó sin stock.", itemId),
 		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}
 }
 
@@ -94,5 +95,14 @@ func NewUserAddedListToFavorites(listId int64, favoriteUser string) *Notificatio
 		Message:   fmt.Sprintf("¡%s añadió esta lista a sus favoritos!", favoriteUser),
 		Timestamp: date_utils.GetNowDateFormatted(),
 		Permalink: fmt.Sprintf(listUrl, listId),
+	}
+}
+
+func NewReviewItemNotification(listId int64, itemId string) *Notification {
+	return &Notification{
+		ListId:    listId,
+		Message:   fmt.Sprintf("¡El producto %s tiene revisiones nuevas por parte de otros usuarios de Mercado Libre!", itemId),
+		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}
 }
