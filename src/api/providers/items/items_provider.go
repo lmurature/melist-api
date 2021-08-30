@@ -8,6 +8,8 @@ import (
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/lmurature/melist-api/src/api/domain/items"
 	http_utils "github.com/lmurature/melist-api/src/api/utils/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,6 +30,12 @@ var (
 
 	reviewsRestClient = rest.RequestBuilder{
 		BaseURL:        http_utils.BaseUrlMeli,
+		Timeout:        5 * time.Second,
+		DisableCache:   true,
+		DisableTimeout: false,
+	}
+
+	vipRestClient = rest.RequestBuilder{
 		Timeout:        5 * time.Second,
 		DisableCache:   true,
 		DisableTimeout: false,
@@ -167,4 +175,34 @@ func GetCategoryTrends(categoryId string) (*items.CategoryTrends, apierrors.ApiE
 	}
 
 	return &result, nil
+}
+
+func GetRealQuantity(permalink string) (*int64, apierrors.ApiError) {
+	response := vipRestClient.Get(permalink)
+
+	if response == nil || response.Response == nil {
+		return nil, apierrors.NewInternalServerApiError("nil resp", errors.New("nil resp"))
+	}
+
+	if response.StatusCode > 299 {
+		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
+		if err != nil {
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal apierror category trends response", err)
+		}
+		return nil, apiErr
+	}
+
+	var result = response.String()
+
+	values := strings.Split(result, "\"availableStock\":")
+	if len(values) > 1 {
+		quantityString := strings.Split(values[1], ",")
+		quantity, err := strconv.ParseInt(quantityString[0], 10, 32)
+		if err != nil {
+			return nil, apierrors.NewInternalServerApiError("error getting int from string", err)
+		}
+		return &quantity, nil
+	}
+
+	return nil, nil
 }

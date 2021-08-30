@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/items"
 	"github.com/lmurature/melist-api/src/api/domain/notifications"
+	items_provider "github.com/lmurature/melist-api/src/api/providers/items"
 	items_service "github.com/lmurature/melist-api/src/api/services/items"
 	lists_service "github.com/lmurature/melist-api/src/api/services/lists"
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
@@ -55,6 +56,12 @@ func persistNotifications() {
 			if revErr != nil {
 				continue
 			}
+
+			realQ, err := items_provider.GetRealQuantity(item.MeliItem.Permalink)
+			if err == nil {
+				item.MeliItem.AvailableQuantity = int(*realQ)
+			}
+
 
 			item.MeliItem.ReviewsQuantity = reviews.Paging.Total
 
