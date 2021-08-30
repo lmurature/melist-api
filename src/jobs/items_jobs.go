@@ -25,7 +25,7 @@ func init() {
 
 func (i ItemsJobsStruct) Run() {
 	// analyze lists, persist history and notifications
-	persistNotifications()
+	go persistNotifications()
 }
 
 func persistNotifications() {
