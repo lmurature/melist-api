@@ -21,42 +21,46 @@ type Notification struct {
 	Seen      bool   `json:"seen"`
 }
 
-func NewPriceChangeNotification(listId int64, itemId string, oldPrice float32, newPrice float32) *Notification {
+func NewPriceChangeNotification(listId int64, itemId string, oldPrice float32, newPrice float32, title string) *Notification {
 	return &Notification{
 		ListId:    listId,
-		Message:   fmt.Sprintf("¡El producto %s tuvo un cambio en su precio! Antes valía %f, ahora %f.", itemId, oldPrice, newPrice),
+		Message:   fmt.Sprintf("¡El producto %s tuvo un cambio en su precio! Antes valía %.2f, ahora %.2f.", title, oldPrice, newPrice),
 		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}
 }
 
-func NewDealActivatedNotification(listId int64, itemId string) *Notification {
+func NewDealActivatedNotification(listId int64, itemId string, title string) *Notification {
 	return &Notification{
 		ListId:    listId,
-		Message:   fmt.Sprintf("¡El producto %s entró en una oferta!", itemId),
+		Message:   fmt.Sprintf("¡El producto %s entró en una oferta!", title),
 		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}
 }
 
-func NewDealEndedNotification(listId int64, itemId string) *Notification {
+func NewDealEndedNotification(listId int64, itemId string, title string) *Notification {
 	return &Notification{
 		ListId:    listId,
-		Message:   fmt.Sprintf("El producto %s ya no está en oferta.", itemId),
+		Message:   fmt.Sprintf("El producto %s ya no está en oferta.", title),
 		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}
 }
 
-func NewNearEmptyStockNotification(listId int64, itemId string, currentStock int) *Notification {
+func NewNearEmptyStockNotification(listId int64, itemId string, currentStock int, title string) *Notification {
 	return &Notification{
 		ListId:    listId,
-		Message:   fmt.Sprintf("El producto %s se está por quedar sin stock, sólo restan %d unidades disponibles.", itemId, currentStock),
+		Message:   fmt.Sprintf("El producto %s se está por quedar sin stock, sólo restan %d unidades disponibles.", title, currentStock),
 		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}
 }
 
-func NewEmptyStockNotification(listId int64, itemId string) *Notification {
+func NewEmptyStockNotification(listId int64, itemId string, title string) *Notification {
 	return &Notification{
 		ListId:    listId,
-		Message:   fmt.Sprintf("El producto %s se quedó sin stock.", itemId),
+		Message:   fmt.Sprintf("El producto %s se quedó sin stock.", title),
 		Timestamp: date_utils.GetNowDateFormatted(),
 		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}
@@ -98,10 +102,10 @@ func NewUserAddedListToFavorites(listId int64, favoriteUser string) *Notificatio
 	}
 }
 
-func NewReviewItemNotification(listId int64, itemId string) *Notification {
+func NewReviewItemNotification(listId int64, itemId string, title string) *Notification {
 	return &Notification{
 		ListId:    listId,
-		Message:   fmt.Sprintf("¡El producto %s tiene revisiones nuevas por parte de otros usuarios de Mercado Libre!", itemId),
+		Message:   fmt.Sprintf("¡El producto %s tiene revisiones nuevas por parte de otros usuarios de Mercado Libre!", title),
 		Timestamp: date_utils.GetNowDateFormatted(),
 		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}

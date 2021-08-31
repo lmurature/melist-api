@@ -169,7 +169,20 @@ func (l listsService) SearchPublicLists() (lists.Lists, apierrors.ApiError) {
 }
 
 func (l listsService) GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError) {
-	return lists.ListDao.GetListsFromOwner(ownerId)
+	lists, err := lists.ListDao.GetListsFromOwner(ownerId)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range lists {
+		listNotif, err := notifications.NotificationsDao.GetListNotifications(lists[i].Id)
+		if err != nil {
+			return nil, err
+		}
+		lists[i].Notifications = len(listNotif)
+	}
+
+	return lists, nil
 }
 
 func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError) {
@@ -189,6 +202,14 @@ func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.Api
 
 	if len(result) == 0 {
 		return nil, apierrors.NewNotFoundApiError("you have no shared lists")
+	}
+
+	for i := range result {
+		listNotif, err := notifications.NotificationsDao.GetListNotifications(result[i].Id)
+		if err != nil {
+			return nil, err
+		}
+		result[i].Notifications = len(listNotif)
 	}
 
 	return result, nil

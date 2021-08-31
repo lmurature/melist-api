@@ -68,27 +68,27 @@ func persistNotifications() {
 			// analyze
 			if lastHistory != nil {
 				if item.MeliItem.HasActiveDeal() && !lastHistory.HasDeal {
-					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealActivatedNotification(list.Id, item.ItemId))
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealActivatedNotification(list.Id, item.ItemId, item.MeliItem.Title))
 				} else if !item.MeliItem.HasActiveDeal() && lastHistory.HasDeal {
-					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealEndedNotification(list.Id, item.ItemId))
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealEndedNotification(list.Id, item.ItemId,  item.MeliItem.Title))
 				}
 
 				if item.MeliItem.Price != lastHistory.Price {
-					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewPriceChangeNotification(list.Id, item.ItemId, lastHistory.Price, item.MeliItem.Price))
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewPriceChangeNotification(list.Id, item.ItemId, lastHistory.Price, item.MeliItem.Price, item.MeliItem.Title))
 				}
 
 				if item.MeliItem.AvailableQuantity == 0 &&
 					item.MeliItem.Status == "paused" &&
 					lastHistory.Quantity > 0 {
-					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewEmptyStockNotification(list.Id, item.ItemId))
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewEmptyStockNotification(list.Id, item.ItemId, item.MeliItem.Title))
 				}
 
 				if item.MeliItem.AvailableQuantity <= 3 && lastHistory.Quantity > 3 {
-					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewNearEmptyStockNotification(list.Id, item.ItemId, item.MeliItem.AvailableQuantity))
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewNearEmptyStockNotification(list.Id, item.ItemId, item.MeliItem.AvailableQuantity, item.MeliItem.Title))
 				}
 
 				if item.MeliItem.ReviewsQuantity > lastHistory.ReviewsQuantity {
-					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewReviewItemNotification(list.Id, item.ItemId))
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewReviewItemNotification(list.Id, item.ItemId, item.MeliItem.Title))
 				}
 			}
 
