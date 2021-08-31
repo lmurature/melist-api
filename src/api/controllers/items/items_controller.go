@@ -6,6 +6,7 @@ import (
 	items_service "github.com/lmurature/melist-api/src/api/services/items"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 func SearchItems(c *gin.Context) {
@@ -16,9 +17,15 @@ func SearchItems(c *gin.Context) {
 		return
 	}
 
-	// TODO: Contemplate items search paging and sorting.
+	offsetParam := c.DefaultQuery("offset", "0")
+	offset, parseErr := strconv.Atoi(offsetParam)
+	if parseErr != nil {
+		br := apierrors.NewBadRequestApiError("offset must be a number")
+		c.JSON(br.Status(), br)
+		return
+	}
 
-	result, err := items_service.ItemsService.SearchItems(url.QueryEscape(query))
+	result, err := items_service.ItemsService.SearchItems(url.QueryEscape(query), offset)
 	if err != nil {
 		c.JSON(err.Status(), err)
 		return

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	uriSearchItems        = "/sites/MLA/search?q=%s"
+	uriSearchItems        = "/sites/MLA/search?q=%s&offset=%d"
 	uriGetItem            = "/items/%s"
 	uriGetItemDescription = "/items/%s/description"
 	uriGetItemReviews     = "/reviews/item/%s?catalog_product_id=%s"
@@ -42,8 +42,8 @@ var (
 	}
 )
 
-func SearchItemsByQuery(query string) (*items.ItemSearchResponse, apierrors.ApiError) {
-	uri := fmt.Sprintf(uriSearchItems, query)
+func SearchItemsByQuery(query string, offset int) (*items.ItemSearchResponse, apierrors.ApiError) {
+	uri := fmt.Sprintf(uriSearchItems, query, offset)
 	response := itemsRestClient.Get(uri)
 
 	if response == nil || response.Response == nil {

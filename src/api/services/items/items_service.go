@@ -11,7 +11,7 @@ import (
 type itemsService struct{}
 
 type itemsServiceInterface interface {
-	SearchItems(query string) (*items.ItemSearchResponse, apierrors.ApiError)
+	SearchItems(query string, offset int) (*items.ItemSearchResponse, apierrors.ApiError)
 	GetItemWithDescription(itemId string) (*items.Item, apierrors.ApiError)
 	GetItemHistory(itemId string) ([]items.ItemHistory, apierrors.ApiError)
 	GetItemReviews(itemId string, catalogProductId string) (*items.ItemReviewsResponse, apierrors.ApiError)
@@ -27,8 +27,8 @@ func init() {
 	ItemsService = &itemsService{}
 }
 
-func (s *itemsService) SearchItems(query string) (*items.ItemSearchResponse, apierrors.ApiError) {
-	result, err := items_provider.SearchItemsByQuery(query)
+func (s *itemsService) SearchItems(query string, offset int) (*items.ItemSearchResponse, apierrors.ApiError) {
+	result, err := items_provider.SearchItemsByQuery(query, offset)
 	if err != nil {
 		return nil, err
 	}
