@@ -5,8 +5,6 @@ import (
 	date_utils "github.com/lmurature/melist-api/src/api/utils/date"
 )
 
-// TODO: change item id into titles?
-
 const (
 	listItemUrl = "/lists/%d/%s"
 	listUrl     = "/lists/%d"
@@ -52,6 +50,15 @@ func NewNearEmptyStockNotification(listId int64, itemId string, currentStock int
 	return &Notification{
 		ListId:    listId,
 		Message:   fmt.Sprintf("El producto %s se está por quedar sin stock, sólo restan %d unidades disponibles.", title, currentStock),
+		Timestamp: date_utils.GetNowDateFormatted(),
+		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
+	}
+}
+
+func NewItemChangedStatusNotification(listId int64, itemId string, title string) *Notification {
+	return &Notification{
+		ListId:    listId,
+		Message:   fmt.Sprintf("El producto %s ya no se puede comprar. La publicación fue pausada o finalizada.", title),
 		Timestamp: date_utils.GetNowDateFormatted(),
 		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
 	}

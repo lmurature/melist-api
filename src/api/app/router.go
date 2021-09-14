@@ -32,7 +32,7 @@ func StartApp() {
 
 	jobs.ItemsJobs.Run()
 	c := clockwerk.New()
-	c.Every(5 * time.Hour).Do(jobs.ItemsJobs)
+	c.Every(10 * time.Hour).Do(jobs.ItemsJobs)
 	c.Start()
 
 	router.Run(config.ApiPort)

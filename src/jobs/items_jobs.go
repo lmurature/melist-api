@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"fmt"
+	"github.com/lmurature/melist-api/src/api/config"
 	"github.com/lmurature/melist-api/src/api/domain/items"
 	"github.com/lmurature/melist-api/src/api/domain/notifications"
 	items_provider "github.com/lmurature/melist-api/src/api/providers/items"
@@ -11,6 +12,7 @@ import (
 	"github.com/onatm/clockwerk"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 var (
@@ -62,19 +64,28 @@ func persistNotifications() {
 				item.MeliItem.AvailableQuantity = int(*realQ)
 			}
 
-
 			item.MeliItem.ReviewsQuantity = reviews.Paging.Total
 
 			// analyze
 			if lastHistory != nil {
+				dateFetchedLastHistory, _ := time.Parse(config.DbDateLayout, lastHistory.DateFetched)
+				if time.Since(dateFetchedLastHistory).Hours() <= 10 {
+					fmt.Println(fmt.Sprintf("ignoring item %s history: recent history was persisted", item.ItemId))
+					continue
+				}
+
 				if item.MeliItem.HasActiveDeal() && !lastHistory.HasDeal {
 					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealActivatedNotification(list.Id, item.ItemId, item.MeliItem.Title))
 				} else if !item.MeliItem.HasActiveDeal() && lastHistory.HasDeal {
-					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealEndedNotification(list.Id, item.ItemId,  item.MeliItem.Title))
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewDealEndedNotification(list.Id, item.ItemId, item.MeliItem.Title))
 				}
 
 				if item.MeliItem.Price != lastHistory.Price {
 					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewPriceChangeNotification(list.Id, item.ItemId, lastHistory.Price, item.MeliItem.Price, item.MeliItem.Title))
+				}
+
+				if item.MeliItem.Status != "active" && lastHistory.Status == "active" {
+					_, _ = notifications.NotificationsDao.SaveNotification(*notifications.NewItemChangedStatusNotification(list.Id, item.ItemId, item.MeliItem.Title))
 				}
 
 				if item.MeliItem.AvailableQuantity == 0 &&
