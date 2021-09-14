@@ -25,7 +25,7 @@ type listsServiceInterface interface {
 	GiveAccessToUsers(listId int64, callerId int64, config share.ShareConfigs) (share.ShareConfigs, apierrors.ApiError)
 	SearchPublicLists() (lists.Lists, apierrors.ApiError)
 	GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError)
-	GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError)
+	GetMySharedLists(userId int64, accessType string) (lists.Lists, apierrors.ApiError)
 	AddItemToList(itemId string, variationId int64, listId int64, callerId int64) apierrors.ApiError
 	GetItemsFromList(listId int64, callerId int64, info bool) (items.ItemListCollection, apierrors.ApiError)
 	DeleteItemFromList(itemId string, listId int64, callerId int64) (items.ItemListCollection, apierrors.ApiError)
@@ -185,7 +185,7 @@ func (l listsService) GetMyLists(ownerId int64) (lists.Lists, apierrors.ApiError
 	return lists, nil
 }
 
-func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.ApiError) {
+func (l listsService) GetMySharedLists(userId int64, accessType string) (lists.Lists, apierrors.ApiError) {
 	userSharedConfigs, err := share.ShareConfigDao.GetAllShareConfigsByUser(userId)
 	if err != nil {
 		return nil, err
@@ -193,11 +193,13 @@ func (l listsService) GetMySharedLists(userId int64) (lists.Lists, apierrors.Api
 
 	result := make([]lists.List, 0)
 	for _, c := range userSharedConfigs {
-		listDto, err := lists.ListDao.GetList(c.ListId)
-		if err != nil {
-			return nil, err
+		if accessType == "" || accessType == c.ShareType {
+			listDto, err := lists.ListDao.GetList(c.ListId)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, *listDto)
 		}
-		result = append(result, *listDto)
 	}
 
 	if len(result) == 0 {

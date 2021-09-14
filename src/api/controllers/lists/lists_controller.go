@@ -166,7 +166,9 @@ func GetMySharedLists(c *gin.Context) {
 	userId, _ := c.Get("user_id")
 	callerId := userId.(int64)
 
-	userSharedLists, err := lists_service.ListsService.GetMySharedLists(callerId)
+	accessType := c.Query("access_type")
+
+	userSharedLists, err := lists_service.ListsService.GetMySharedLists(callerId, accessType)
 	if err != nil {
 		c.JSON(err.Status(), err)
 		return
