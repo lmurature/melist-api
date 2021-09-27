@@ -195,10 +195,6 @@ func (dao *listDao) GetUserFavoriteLists(userId int64) (Lists, apierrors.ApiErro
 		result = append(result, list)
 	}
 
-	if len(result) == 0 {
-		return nil, apierrors.NewNotFoundApiError(fmt.Sprintf("no favorite lists found for user %d", userId))
-	}
-
 	return result, nil
 }
 
