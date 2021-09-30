@@ -121,7 +121,7 @@ func (dao *userDao) SearchUsers(query string) ([]MelistUser, apierrors.ApiError)
 
 	rows, err := stmt.Query(query, query, query)
 	if err != nil {
-		logrus.Error("error when querying users search into database")
+		logrus.Error("error when querying users search into database", err)
 		return nil, apierrors.NewInternalServerApiError("error when trying to search users", error_utils.GetDatabaseGenericError())
 	}
 	defer rows.Close()
