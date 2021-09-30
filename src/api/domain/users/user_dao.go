@@ -14,7 +14,7 @@ const (
 	insertUser  = "INSERT INTO user(id, first_name, last_name, email, nickname, date_created, access_token, refresh_token) VALUES(?,?,?,?,?,?,?,?);"
 	findByEmail = "SELECT u.id, u.first_name, u.last_name, u.nickname, u.email, u.date_created FROM user u WHERE u.email=?;"
 	updateUser  = "UPDATE user SET first_name=?, last_name=?, email=?, nickname=?, access_token=?, refresh_token=? WHERE id=?"
-	searchUser = "SELECT u.id, u.first_name, u.last_name, u.nickname, u.email FROM user u WHERE u.email LIKE CONCAT('%', ?, '%') OR u.first_name LIKE CONCAT('%', ?, '%') OR u.last_name LIKE CONCAT('%', ?, '%');"
+	searchUser = "SELECT u.id, u.first_name, u.last_name, u.nickname, u.email FROM user u WHERE u.email LIKE CONCAT('%', ?, '%') OR u.first_name LIKE CONCAT('%', ?, '%') OR u.last_name LIKE CONCAT('%', ?, '%') OR u.nickname LIKE CONCAT('%', ?, '%');"
 )
 
 var (
