@@ -202,10 +202,6 @@ func (l listsService) GetMySharedLists(userId int64, shareType string) (lists.Li
 		}
 	}
 
-	if len(result) == 0 {
-		return nil, apierrors.NewNotFoundApiError("you have no shared lists")
-	}
-
 	for i := range result {
 		listNotif, err := notifications.NotificationsDao.GetListNotifications(result[i].Id)
 		if err != nil {
