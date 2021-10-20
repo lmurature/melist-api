@@ -76,10 +76,6 @@ func (dao *shareConfigDao) GetAllShareConfigsByUser(userId int64) (ShareConfigs,
 		result = append(result, conf)
 	}
 
-	if len(result) == 0 {
-		return nil, apierrors.NewNotFoundApiError("no share configs found for user")
-	}
-
 	return result, nil
 }
 
