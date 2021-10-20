@@ -162,10 +162,6 @@ func (dao *listDao) GetListsFromOwner(ownerId int64) (Lists, apierrors.ApiError)
 		result = append(result, list)
 	}
 
-	if len(result) == 0 {
-		return nil, apierrors.NewNotFoundApiError(fmt.Sprintf("no lists found for owner %d", ownerId))
-	}
-
 	return result, nil
 }
 
