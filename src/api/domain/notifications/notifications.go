@@ -8,6 +8,7 @@ import (
 const (
 	listItemUrl = "/lists/%d/%s"
 	listUrl     = "/lists/%d"
+	listItemReviewsUrl = "/lists/%d/%s/reviews"
 )
 
 type Notification struct {
@@ -15,7 +16,7 @@ type Notification struct {
 	ListId    int64  `json:"list_id"`
 	Message   string `json:"message"`
 	Timestamp string `json:"timestamp"`
-	Permalink string `json:"permalink"`
+	Permalink string `json:"permalink"m `
 	Seen      bool   `json:"seen"`
 }
 
@@ -114,6 +115,6 @@ func NewReviewItemNotification(listId int64, itemId string, title string) *Notif
 		ListId:    listId,
 		Message:   fmt.Sprintf("¡El producto %s tiene revisiones nuevas por parte de otros usuarios de Mercado Libre!", title),
 		Timestamp: date_utils.GetNowDateFormatted(),
-		Permalink: fmt.Sprintf(listItemUrl, listId, itemId),
+		Permalink: fmt.Sprintf(listItemReviewsUrl, listId, itemId),
 	}
 }
