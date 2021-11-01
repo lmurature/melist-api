@@ -17,7 +17,7 @@ const (
 	uriSearchItems        = "/sites/MLA/search?q=%s&offset=%d"
 	uriGetItem            = "/items/%s"
 	uriGetItemDescription = "/items/%s/description"
-	uriGetItemReviews     = "/reviews/item/%s?catalog_product_id=%s&limit=200"
+	uriGetItemReviews     = "/reviews/item/%s?catalog_product_id=%s&limit=200&order=desc&order_criteria=dateCreated"
 	uriGetCategoryTrends  = "/trends/MLA/%s"
 )
 
