@@ -67,7 +67,7 @@ func (l List) ValidateCheckItems(callerId int64, configs share.ShareConfigs) api
 			return nil
 		}
 		for _, c := range configs {
-			if c.UserId == callerId && c.ShareType == share.ShareTypeCheck {
+			if c.UserId == callerId && (c.ShareType == share.ShareTypeCheck || c.ShareType == share.ShareTypeWrite) {
 				return nil
 			}
 		}
