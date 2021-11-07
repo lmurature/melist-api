@@ -69,6 +69,8 @@ func (s *itemsService) GetItemWithDescription(itemId string) (*items.Item, apier
 			category, _ := items_provider.GetCategory(result.Item.CategoryId)
 			if category != nil && len(category.PathFromRoot) > 0 {
 				result.Item.RootCategory = category.PathFromRoot[0]["name"]
+			} else {
+				result.Item.RootCategory = "Otros"
 			}
 
 			meliItem = result.Item
