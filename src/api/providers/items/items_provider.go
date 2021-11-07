@@ -19,12 +19,13 @@ const (
 	uriGetItemDescription = "/items/%s/description"
 	uriGetItemReviews     = "/reviews/item/%s?catalog_product_id=%s&limit=200&order=desc&order_criteria=dateCreated"
 	uriGetCategoryTrends  = "/trends/MLA/%s"
+	uriGetCategory        = "/categories/%s"
 )
 
 var (
 	itemsRestClient = rest.RequestBuilder{
 		BaseURL:        http_utils.BaseUrlMeli,
-		Timeout:        5 * time.Second,
+		Timeout:        15 * time.Second,
 		DisableTimeout: false,
 	}
 
@@ -39,6 +40,13 @@ var (
 		Timeout:        5 * time.Second,
 		DisableCache:   true,
 		DisableTimeout: false,
+	}
+
+	categoryRestClient = rest.RequestBuilder{
+		BaseURL:        http_utils.BaseUrlMeli,
+		Timeout:        15 * time.Second,
+		DisableTimeout: false,
+		DisableCache:   false,
 	}
 )
 
@@ -205,4 +213,31 @@ func GetRealQuantity(permalink string) (*int64, apierrors.ApiError) {
 	}
 
 	return nil, nil
+}
+
+func GetCategory(categoryId string) (*items.Category, apierrors.ApiError) {
+	uri := fmt.Sprintf(uriGetCategory, categoryId)
+	response := categoryRestClient.Get(uri)
+
+	if response == nil || response.Response == nil {
+		err := errors.New("invalid restclient response")
+		msg := fmt.Sprintf("invalid restclient response getting category %s", categoryId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	if response.StatusCode > 299 {
+		apiErr, err := apierrors.NewApiErrorFromBytes(response.Bytes())
+		if err != nil {
+			return nil, apierrors.NewInternalServerApiError("error when trying to unmarshal apierror category", err)
+		}
+		return nil, apiErr
+	}
+
+	var cat items.Category
+	if err := json.Unmarshal(response.Bytes(), &cat); err != nil {
+		msg := fmt.Sprintf("error trying to unmarshal response into category %s structure", categoryId)
+		return nil, apierrors.NewInternalServerApiError(msg, err)
+	}
+
+	return &cat, nil
 }

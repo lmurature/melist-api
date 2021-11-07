@@ -66,6 +66,11 @@ func (s *itemsService) GetItemWithDescription(itemId string) (*items.Item, apier
 		err = result.Error
 
 		if result.Item != nil {
+			category, _ := items_provider.GetCategory(result.Item.CategoryId)
+			if category != nil && len(category.PathFromRoot) > 0 {
+				result.Item.RootCategory = category.PathFromRoot[0]["name"]
+			}
+
 			meliItem = result.Item
 		} else if result.Description != nil {
 			desc = result.Description
@@ -79,6 +84,7 @@ func (s *itemsService) GetItemWithDescription(itemId string) (*items.Item, apier
 	if desc != nil && meliItem != nil {
 		meliItem.Description = desc.PlainText
 	}
+
 	return meliItem, nil
 }
 

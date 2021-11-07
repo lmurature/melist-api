@@ -25,6 +25,7 @@ type Item struct {
 	Thumbnail         string          `json:"thumbnail"`
 	CatalogProductId  string          `json:"catalog_product_id,omitempty"`
 	ReviewsQuantity   int64           `json:"-"`
+	RootCategory      string          `json:"root_category,omitempty"`
 }
 
 type ItemDescription struct {
@@ -95,6 +96,12 @@ type ItemDescriptionConcurrent struct {
 	Item        *Item
 	Description *ItemDescription
 	Error       apierrors.ApiError
+}
+
+type Category struct {
+	Id           string              `json:"id"`
+	Name         string              `json:"name"`
+	PathFromRoot []map[string]string `json:"path_from_root"`
 }
 
 func (i *Item) HasActiveDeal() bool {
