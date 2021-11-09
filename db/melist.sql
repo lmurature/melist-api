@@ -79,3 +79,12 @@ CREATE TABLE `item_history` (
   KEY `item_history_FK` (`item_id`),
   CONSTRAINT `item_history_FK` FOREIGN KEY (`item_id`) REFERENCES `item` (`item_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `future_colaborator` (
+	list_id BIGINT UNSIGNED NOT NULL,
+	user_email varchar(100) NOT NULL,
+	share_type varchar(100) NULL,
+	CONSTRAINT future_colaborator_FK FOREIGN KEY (list_id) REFERENCES melist.list(id)
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_0900_ai_ci;

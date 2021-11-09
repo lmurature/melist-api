@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
 	"github.com/lmurature/melist-api/src/api/domain/auth"
+	"github.com/lmurature/melist-api/src/api/domain/share"
 	"github.com/lmurature/melist-api/src/api/domain/users"
 	auth_provider "github.com/lmurature/melist-api/src/api/providers/auth"
 	users_service "github.com/lmurature/melist-api/src/api/services/users"
@@ -43,6 +44,24 @@ func (s *authService) AuthenticateUser(code string) (*auth.MeliAuthResponse, api
 
 	if err := users_service.UsersService.SaveUserToDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
 		// save user gives error 'cause it already exist. This should occur only if client loses refresh token.
+
+		// parse all user email requests to collaborate to list
+		userFutureConfigs, err := share.ShareConfigDao.GetAllFutureListCollaborationByEmail(authenticatedUser.Email)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fc := range userFutureConfigs {
+			_, err := share.ShareConfigDao.CreateShareConfig(share.ShareConfig{
+				ListId:    fc.ListId,
+				UserId:    authenticatedUser.Id,
+				ShareType: fc.ShareType,
+			})
+			if err == nil {
+				logrus.Info(fmt.Sprintf("successfully added future collaboration as proper collaboration to user %s", authenticatedUser.Email))
+			}
+		}
+
 		if err := users_service.UsersService.UpdateUserDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
 			return nil, err
 		}

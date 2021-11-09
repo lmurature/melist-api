@@ -9,11 +9,13 @@ import (
 )
 
 const (
-	insertShareConfig     = "INSERT INTO share_config(user_id, list_id, `type`) VALUES (?,?,?);"
-	getShareConfigsByUser = "SELECT s.user_id, s.list_id, s.`type` FROM share_config s WHERE s.user_id=?;"
-	getShareConfigsByList = "SELECT s.user_id, s.list_id, s.`type`, u.first_name, u.last_name, u.email, u.nickname FROM share_config s INNER JOIN user u ON s.user_id=u.id WHERE s.list_id=?;"
-	updateShareConfigType = "UPDATE share_config SET `type`=? WHERE (user_id=? AND list_id=?);"
-	deleteShareConfig     = "DELETE FROM share_config s WHERE (s.user_id=? AND s.list_id=?);"
+	insertShareConfig             = "INSERT INTO share_config(user_id, list_id, `type`) VALUES (?,?,?);"
+	insertEmailShareConfig        = "INSERT INTO future_colaborator(user_email, list_id, share_type) VALUES (?,?,?);"
+	getShareConfigsByUser         = "SELECT s.user_id, s.list_id, s.`type` FROM share_config s WHERE s.user_id=?;"
+	getFutureCollaborationsByUser = "SELECT s.user_email, s.list_id, s.share_type FROM future_colaborator s WHERE s.user_email=?;"
+	getShareConfigsByList         = "SELECT s.user_id, s.list_id, s.`type`, u.first_name, u.last_name, u.email, u.nickname FROM share_config s INNER JOIN user u ON s.user_id=u.id WHERE s.list_id=?;"
+	updateShareConfigType         = "UPDATE share_config SET `type`=? WHERE (user_id=? AND list_id=?);"
+	deleteShareConfig             = "DELETE FROM share_config s WHERE (s.user_id=? AND s.list_id=?);"
 )
 
 var (
@@ -26,6 +28,8 @@ type shareConfigDaoInterface interface {
 	GetAllShareConfigsByList(listId int64) (ShareConfigs, apierrors.ApiError)
 	UpdateShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError)
 	DeleteShareConfig(userId int64, listId int64) apierrors.ApiError
+	CreateEmailShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError)
+	GetAllFutureListCollaborationByEmail(email string) (ShareConfigs, apierrors.ApiError)
 }
 
 type shareConfigDao struct{}
@@ -44,6 +48,24 @@ func (dao *shareConfigDao) CreateShareConfig(conf ShareConfig) (*ShareConfig, ap
 
 	_, saveErr := stmt.Exec(conf.UserId, conf.ListId, conf.ShareType)
 	if saveErr != nil {
+		logrus.Error(saveErr)
+		return nil, apierrors.NewInternalServerApiError("error when trying to save share config", errors.New("database error"))
+	}
+
+	return &conf, nil
+}
+
+func (dao *shareConfigDao) CreateEmailShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError) {
+	stmt, err := database.DbClient.Prepare(insertEmailShareConfig)
+	if err != nil {
+		logrus.Error("error when trying to prepare insert share config statement", err)
+		return nil, apierrors.NewInternalServerApiError("error when trying to insert share config", errors.New("database error"))
+	}
+	defer stmt.Close()
+
+	_, saveErr := stmt.Exec(conf.Email, conf.ListId, conf.ShareType)
+	if saveErr != nil {
+		logrus.Error(saveErr)
 		return nil, apierrors.NewInternalServerApiError("error when trying to save share config", errors.New("database error"))
 	}
 
@@ -72,6 +94,35 @@ func (dao *shareConfigDao) GetAllShareConfigsByUser(userId int64) (ShareConfigs,
 		if err := rows.Scan(&conf.UserId, &conf.ListId, &conf.ShareType); err != nil {
 			logrus.Error("error when scan share config row into share config struct", err)
 			return nil, apierrors.NewInternalServerApiError("error when tying to get share configs from user", errors.New("database error"))
+		}
+		result = append(result, conf)
+	}
+
+	return result, nil
+}
+
+func (dao *shareConfigDao) GetAllFutureListCollaborationByEmail(email string) (ShareConfigs, apierrors.ApiError) {
+	stmt, err := database.DbClient.Prepare(getFutureCollaborationsByUser)
+	if err != nil {
+		logrus.Error("error when trying to prepare get email share config by email statement", err)
+		return nil, apierrors.NewInternalServerApiError("error when trying to get email configs", errors.New("database error"))
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(email)
+	if err != nil {
+		logrus.Error("error while getting email config lists from email", err)
+		return nil, apierrors.NewInternalServerApiError("error getting email config lists from email", errors.New("database error"))
+	}
+	defer rows.Close()
+
+	result := make([]ShareConfig, 0)
+
+	for rows.Next() {
+		var conf ShareConfig
+		if err := rows.Scan(&conf.Email, &conf.ListId, &conf.ShareType); err != nil {
+			logrus.Error("error when scan email config row into share config struct", err)
+			return nil, apierrors.NewInternalServerApiError("error when tying to get email configs from email", errors.New("database error"))
 		}
 		result = append(result, conf)
 	}
