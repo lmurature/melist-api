@@ -45,6 +45,11 @@ func (s *authService) AuthenticateUser(code string) (*auth.MeliAuthResponse, api
 	if err := users_service.UsersService.SaveUserToDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
 		// save user gives error 'cause it already exist. This should occur only if client loses refresh token.
 
+		if err := users_service.UsersService.UpdateUserDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
+			return nil, err
+		}
+
+	} else {
 		// parse all user email requests to collaborate to list
 		userFutureConfigs, err := share.ShareConfigDao.GetAllFutureListCollaborationByEmail(authenticatedUser.Email)
 		if err != nil {
@@ -61,11 +66,6 @@ func (s *authService) AuthenticateUser(code string) (*auth.MeliAuthResponse, api
 				logrus.Info(fmt.Sprintf("successfully added future collaboration as proper collaboration to user %s", authenticatedUser.Email))
 			}
 		}
-
-		if err := users_service.UsersService.UpdateUserDb(*authenticatedUser, result.AccessToken, result.RefreshToken); err != nil {
-			return nil, err
-		}
-
 	}
 
 	return result, nil
