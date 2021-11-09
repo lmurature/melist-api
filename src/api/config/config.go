@@ -18,6 +18,12 @@ var (
 	ApiPort string
 
 	DbDateLayout = "2006-01-02 15:04:05"
+
+	EmailAddress string
+	EmailPassword string
+
+	SmtpHost    = "smtp.gmail.com"
+	SmtpAddress = "smtp.gmail.com:587"
 )
 
 func init() {
@@ -37,6 +43,8 @@ func init() {
 	}
 
 	SecretKey = os.Getenv("SECRET_KEY")
+	EmailAddress = os.Getenv("EMAIL_ADDRESS")
+	EmailPassword = os.Getenv("EMAIL_PASSWORD")
 }
 
 func isDevelopment() bool {

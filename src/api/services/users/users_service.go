@@ -3,7 +3,10 @@ package users_service
 import (
 	"fmt"
 	"github.com/lmurature/melist-api/src/api/domain/apierrors"
+	"github.com/lmurature/melist-api/src/api/domain/lists"
+	"github.com/lmurature/melist-api/src/api/domain/share"
 	"github.com/lmurature/melist-api/src/api/domain/users"
+	"github.com/lmurature/melist-api/src/api/providers/mail"
 	users_provider "github.com/lmurature/melist-api/src/api/providers/users"
 	"github.com/lmurature/melist-api/src/api/utils/date"
 	"github.com/sirupsen/logrus"
@@ -19,6 +22,7 @@ type usersServiceInterface interface {
 	FindUserByEmail(email string) (*users.MelistUser, apierrors.ApiError)
 	UpdateUserDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError
 	SearchUsers(query string) ([]users.MelistUser, apierrors.ApiError)
+	InviteUser(email string, shareType string, listId int64, callerId int64) (map[string]interface{}, apierrors.ApiError)
 }
 
 var (
@@ -113,4 +117,33 @@ func (s *usersService) SearchUsers(query string) ([]users.MelistUser, apierrors.
 	}
 
 	return result, nil
+}
+
+func (s *usersService) InviteUser(email string, shareType string, listId int64, callerId int64) (map[string]interface{}, apierrors.ApiError) {
+	caller, err := s.GetUserFromDb(callerId)
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: check user admin of list
+	if err := list.ValidateUpdatability(callerId); err != nil {
+		return nil, err
+	}
+
+	// TODO: persist sharing ?
+	// TODO: add new table on db in which a new user is authenticaded the process of giving access is completed
+
+	// authUrl := "https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=5112680121711673&redirect_uri=https://melist-app.herokuapp.com/auth/authorized"
+	listUrl := fmt.Sprintf("https://melist-app.herokuapp.com/lists/%d", listId)
+	mail.SendMail(email, share.GetFormattedShareType(shareType),
+		caller.FirstName,
+		caller.LastName,
+		list.Title,
+		listUrl)
+	return nil, nil
 }

@@ -46,8 +46,8 @@ func (dao *userDao) GetUser(userId int64) (*MelistUser, apierrors.ApiError) {
 	result := stmt.QueryRow(userId)
 
 	var u MelistUser
-	if queryErr := result.Scan(&u.Id, &u.FirstName, u.LastName, u.Nickname, u.Email, u.DateCreated, u.AccessToken, u.RefreshToken); queryErr != nil {
-		logrus.Error("user not found", err)
+	if queryErr := result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Nickname, &u.Email, &u.DateCreated, &u.AccessToken, &u.RefreshToken); queryErr != nil {
+		logrus.Error("user not found", queryErr)
 		return nil, apierrors.NewNotFoundApiError("user not found")
 	}
 

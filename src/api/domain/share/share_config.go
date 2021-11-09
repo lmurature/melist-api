@@ -33,3 +33,16 @@ func (s ShareConfig) Validate() apierrors.ApiError {
 
 	return nil
 }
+
+func GetFormattedShareType(sType string) string {
+	switch sType {
+	case ShareTypeWrite:
+		return "Modificador"
+	case ShareTypeCheck:
+		return "Comprador"
+	case ShareTypeRead:
+		return "Lector"
+	default:
+		return ""
+	}
+}
