@@ -130,13 +130,9 @@ func (s *usersService) InviteUser(email string, shareType string, listId int64, 
 		return nil, err
 	}
 
-	// TODO: check user admin of list
 	if err := list.ValidateUpdatability(callerId); err != nil {
 		return nil, err
 	}
-
-	// TODO: persist sharing ?
-	// TODO: add new table on db in which a new user is authenticaded the process of giving access is completed
 
 	_, err = share.ShareConfigDao.CreateEmailShareConfig(share.ShareConfig{
 		ListId:    listId,
@@ -147,7 +143,6 @@ func (s *usersService) InviteUser(email string, shareType string, listId int64, 
 		return nil, err
 	}
 
-	// authUrl := "https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=5112680121711673&redirect_uri=https://melist-app.herokuapp.com/auth/authorized"
 	listUrl := fmt.Sprintf("https://melist-app.herokuapp.com/lists/%d", listId)
 	mail.SendMail(email, share.GetFormattedShareType(shareType),
 		caller.FirstName,
