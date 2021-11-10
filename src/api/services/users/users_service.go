@@ -157,3 +157,8 @@ func (s *usersService) InviteUser(email string, shareType string, listId int64, 
 
 	return nil, nil
 }
+
+// admin of list send invitation over email to another external user
+// the system creates a future collaboration row in which
+// when the user that was invited logs in, the future collaboration table by email
+// is read and all the share configs are persisted.
