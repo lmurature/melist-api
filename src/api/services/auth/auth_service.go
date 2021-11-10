@@ -63,7 +63,11 @@ func (s *authService) AuthenticateUser(code string) (*auth.MeliAuthResponse, api
 				ShareType: fc.ShareType,
 			})
 			if err == nil {
-				logrus.Info(fmt.Sprintf("successfully added future collaboration as proper collaboration to user %s", authenticatedUser.Email))
+				logrus.Info(fmt.Sprintf("successfully added future collaboration as proper collaboration to user %s. Deleting future collaboration register", authenticatedUser.Email))
+				err := share.ShareConfigDao.DeleteFutureCollaborationConfig(authenticatedUser.Email, fc.ListId)
+				if err == nil {
+					logrus.Info(fmt.Sprintf("successfully deleted future collaboration %s.", authenticatedUser.Email))
+				}
 			}
 		}
 	}

@@ -16,6 +16,7 @@ const (
 	getShareConfigsByList         = "SELECT s.user_id, s.list_id, s.`type`, u.first_name, u.last_name, u.email, u.nickname FROM share_config s INNER JOIN user u ON s.user_id=u.id WHERE s.list_id=?;"
 	updateShareConfigType         = "UPDATE share_config SET `type`=? WHERE (user_id=? AND list_id=?);"
 	deleteShareConfig             = "DELETE FROM share_config s WHERE (s.user_id=? AND s.list_id=?);"
+	deleteFutureCollaboration     = "DELETE FROM future_colaborator fc WHERE (fc.user_email=? AND fc.list_id=?)"
 )
 
 var (
@@ -30,6 +31,7 @@ type shareConfigDaoInterface interface {
 	DeleteShareConfig(userId int64, listId int64) apierrors.ApiError
 	CreateEmailShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError)
 	GetAllFutureListCollaborationByEmail(email string) (ShareConfigs, apierrors.ApiError)
+	DeleteFutureCollaborationConfig(email string, listId int64) apierrors.ApiError
 }
 
 type shareConfigDao struct{}
@@ -192,6 +194,22 @@ func (dao *shareConfigDao) DeleteShareConfig(userId int64, listId int64) apierro
 	_, deleteErr := stmt.Exec(userId, listId)
 	if deleteErr != nil {
 		return apierrors.NewInternalServerApiError("error when trying to delete share config", errors.New("database error"))
+	}
+
+	return nil
+}
+
+func (dao *shareConfigDao) DeleteFutureCollaborationConfig(email string, listId int64) apierrors.ApiError {
+	stmt, err := database.DbClient.Prepare(deleteFutureCollaboration)
+	if err != nil {
+		logrus.Error("error when trying to prepare delete future collaboration config statement", err)
+		return apierrors.NewInternalServerApiError("error when trying to delete future collaboration config", errors.New("database error"))
+	}
+	defer stmt.Close()
+
+	_, deleteErr := stmt.Exec(email, listId)
+	if deleteErr != nil {
+		return apierrors.NewInternalServerApiError("error when trying to delete future collaboration config", errors.New("database error"))
 	}
 
 	return nil
