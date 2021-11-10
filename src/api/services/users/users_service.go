@@ -10,6 +10,7 @@ import (
 	users_provider "github.com/lmurature/melist-api/src/api/providers/users"
 	"github.com/lmurature/melist-api/src/api/utils/date"
 	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 type usersService struct{}
@@ -137,6 +138,28 @@ func (s *usersService) InviteUser(email string, shareType string, listId int64, 
 
 	if err := list.ValidateUpdatability(callerId); err != nil {
 		return nil, err
+	}
+
+	// search user email if not exists process email..
+	result, err := users.UserDao.SearchUsers(email)
+	if err != nil {
+		if err.Status() != http.StatusNotFound {
+			return nil, err
+		}
+	}
+
+	// user already exists and list owner wanted to give him access by email in modal..
+	if result != nil && len(result) > 0 {
+		_, err := share.ShareConfigDao.CreateShareConfig(share.ShareConfig{
+			ListId:    list.Id,
+			UserId:    result[0].Id,
+			ShareType: shareType,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
 	}
 
 	_, err = share.ShareConfigDao.CreateEmailShareConfig(share.ShareConfig{
