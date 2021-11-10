@@ -15,9 +15,9 @@ const (
 
 type ShareConfig struct {
 	ListId    int64             `json:"list_id"`
-	UserId    int64             `json:"user_id"`
+	UserId    int64             `json:"user_id,omitempty"`
 	ShareType string            `json:"share_type"`
-	Email     string            `json:"email"`
+	Email     string            `json:"email,omitempty"`
 	UserData  *users.MelistUser `json:"user,omitempty"`
 }
 

@@ -19,6 +19,7 @@ func mapUrls() {
 	router.GET("/api/users/me", middlewares.Authenticate, users_controller.GetUserMe)
 	router.GET("/api/users/search", middlewares.Authenticate, users_controller.SearchUsers)
 	router.POST("/api/users/invite", middlewares.Authenticate, users_controller.InviteUser)
+	router.GET("/api/users/invite/pending", middlewares.Authenticate, users_controller.GetPendingUsersByList)
 
 	router.GET("/api/items/search", middlewares.Authenticate, items_controller.SearchItems)
 	router.GET("/api/items/:item_id", middlewares.Authenticate, items_controller.GetItem)

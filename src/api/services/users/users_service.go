@@ -23,6 +23,7 @@ type usersServiceInterface interface {
 	UpdateUserDb(u users.User, accessToken string, refreshToken string) apierrors.ApiError
 	SearchUsers(query string) ([]users.MelistUser, apierrors.ApiError)
 	InviteUser(email string, shareType string, listId int64, callerId int64) (map[string]interface{}, apierrors.ApiError)
+	GetPendingUsersByList(listId int64, callerId int64) (share.ShareConfigs, apierrors.ApiError)
 }
 
 var (
@@ -119,6 +120,10 @@ func (s *usersService) SearchUsers(query string) ([]users.MelistUser, apierrors.
 	return result, nil
 }
 
+// admin of list send invitation over email to another external user
+// the system creates a future collaboration row in which
+// when the user that was invited logs in, the future collaboration table by email
+// is read and all the share configs are persisted.
 func (s *usersService) InviteUser(email string, shareType string, listId int64, callerId int64) (map[string]interface{}, apierrors.ApiError) {
 	caller, err := s.GetUserFromDb(callerId)
 	if err != nil {
@@ -153,7 +158,15 @@ func (s *usersService) InviteUser(email string, shareType string, listId int64, 
 	return nil, nil
 }
 
-// admin of list send invitation over email to another external user
-// the system creates a future collaboration row in which
-// when the user that was invited logs in, the future collaboration table by email
-// is read and all the share configs are persisted.
+func (s *usersService) GetPendingUsersByList(listId int64, callerId int64) (share.ShareConfigs, apierrors.ApiError) {
+	list, err := lists.ListDao.GetList(listId)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := list.ValidateUpdatability(callerId); err != nil {
+		return nil, err
+	}
+
+	return share.ShareConfigDao.GetAllFutureListCollaborationByList(listId)
+}

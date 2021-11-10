@@ -50,3 +50,22 @@ func InviteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+func GetPendingUsersByList(c *gin.Context) {
+	listIdQuery := c.Query("list_id")
+	listId, err := strconv.ParseInt(listIdQuery, 10, 64)
+	if err != nil {
+		br := apierrors.NewBadRequestApiError("list id must be an integer")
+		c.JSON(br.Status(), br)
+		return
+	}
+	callerId, _ := c.Get("user_id")
+
+	result, resErr := users_service.UsersService.GetPendingUsersByList(listId, callerId.(int64))
+	if resErr != nil {
+		c.JSON(resErr.Status(), resErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

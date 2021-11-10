@@ -13,6 +13,7 @@ const (
 	insertEmailShareConfig        = "INSERT INTO future_colaborator(user_email, list_id, share_type) VALUES (?,?,?);"
 	getShareConfigsByUser         = "SELECT s.user_id, s.list_id, s.`type` FROM share_config s WHERE s.user_id=?;"
 	getFutureCollaborationsByUser = "SELECT s.user_email, s.list_id, s.share_type FROM future_colaborator s WHERE s.user_email=?;"
+	getFutureCollaborationsByList = "SELECT s.user_email, s.list_id, s.share_type FROM future_colaborator s WHERE s.list_id=?;"
 	getShareConfigsByList         = "SELECT s.user_id, s.list_id, s.`type`, u.first_name, u.last_name, u.email, u.nickname FROM share_config s INNER JOIN user u ON s.user_id=u.id WHERE s.list_id=?;"
 	updateShareConfigType         = "UPDATE share_config SET `type`=? WHERE (user_id=? AND list_id=?);"
 	deleteShareConfig             = "DELETE FROM share_config s WHERE (s.user_id=? AND s.list_id=?);"
@@ -31,6 +32,7 @@ type shareConfigDaoInterface interface {
 	DeleteShareConfig(userId int64, listId int64) apierrors.ApiError
 	CreateEmailShareConfig(conf ShareConfig) (*ShareConfig, apierrors.ApiError)
 	GetAllFutureListCollaborationByEmail(email string) (ShareConfigs, apierrors.ApiError)
+	GetAllFutureListCollaborationByList(listId int64) (ShareConfigs, apierrors.ApiError)
 	DeleteFutureCollaborationConfig(email string, listId int64) apierrors.ApiError
 }
 
@@ -115,6 +117,35 @@ func (dao *shareConfigDao) GetAllFutureListCollaborationByEmail(email string) (S
 	if err != nil {
 		logrus.Error("error while getting email config lists from email", err)
 		return nil, apierrors.NewInternalServerApiError("error getting email config lists from email", errors.New("database error"))
+	}
+	defer rows.Close()
+
+	result := make([]ShareConfig, 0)
+
+	for rows.Next() {
+		var conf ShareConfig
+		if err := rows.Scan(&conf.Email, &conf.ListId, &conf.ShareType); err != nil {
+			logrus.Error("error when scan email config row into share config struct", err)
+			return nil, apierrors.NewInternalServerApiError("error when tying to get email configs from email", errors.New("database error"))
+		}
+		result = append(result, conf)
+	}
+
+	return result, nil
+}
+
+func (dao *shareConfigDao) GetAllFutureListCollaborationByList(listId int64) (ShareConfigs, apierrors.ApiError) {
+	stmt, err := database.DbClient.Prepare(getFutureCollaborationsByList)
+	if err != nil {
+		logrus.Error("error when trying to prepare get future share config by list statement", err)
+		return nil, apierrors.NewInternalServerApiError("error when trying to get future list configs", errors.New("database error"))
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(listId)
+	if err != nil {
+		logrus.Error("error while getting future config lists from list id", err)
+		return nil, apierrors.NewInternalServerApiError("error getting future config lists from list id", errors.New("database error"))
 	}
 	defer rows.Close()
 
